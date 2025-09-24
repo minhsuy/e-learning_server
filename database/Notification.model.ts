@@ -27,3 +27,5 @@ const notificationSchema = new Schema<INotification>(
 const Notification = models.Notification || mongoose.model<INotification>('Notification', notificationSchema)
 
 export default Notification
+
+// cart , category , chapter , comment , coupon , course , favoritecourse , lesson , noti , order ,progress , question , quiz , rating , user , userquiz

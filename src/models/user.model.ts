@@ -1,10 +1,7 @@
-import { model, Schema } from 'mongoose'
+import { Document, model, Schema } from 'mongoose'
+import { UserRole, UserStatus } from '~/types/enum'
+import { SocialLinks } from '~/types/type'
 
-interface SocialLinks {
-  facebook?: string
-  instagram?: string
-  github?: string
-}
 export interface User extends Document {
   _id: string
   username: string
@@ -19,8 +16,10 @@ export interface User extends Document {
   bio: string
   socialLinks?: SocialLinks
   isVerified: string
+  refresh_token?: string
+  reset_password_token?: string
+  reset_password_expires?: Date
 }
-
 const userSchema = new Schema<User>(
   {
     username: {
@@ -63,12 +62,21 @@ const userSchema = new Schema<User>(
       default: UserRole.USER
     },
     socialLinks: {
-      facebook: { type: String },
-      instagram: { type: String },
-      github: { type: String }
+      facebook: { type: String, default: '' },
+      instagram: { type: String, default: '' },
+      github: { type: String, default: '' }
     },
     isVerified: {
       type: String
+    },
+    refresh_token: {
+      type: String
+    },
+    reset_password_token: {
+      type: String
+    },
+    reset_password_expires: {
+      type: Date
     }
   },
   {

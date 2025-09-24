@@ -1,11 +1,20 @@
 import express from 'express'
-import { Request, Response } from 'express'
+import connectDB from './config/dbConnect'
+import { indexRoutes } from './routes/index.route'
+import dotenv from 'dotenv'
+import { errorHandler } from './middlewares/errorHandler'
+import './cronJobs/deleteUnverifiedUsers'
+
+dotenv.config()
 const app = express()
+connectDB()
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('Hello pro')
-})
+const port = process.env.PORT
 
-app.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000')
+app.use(express.json())
+
+indexRoutes(app)
+app.use(errorHandler)
+app.listen(port, () => {
+  console.log(`Server is running on port : http://localhost:${port}`)
 })

@@ -27,6 +27,7 @@ export interface Course extends Document {
   chapters: Schema.Types.ObjectId[]
   author: Schema.Types.ObjectId
   rating: Schema.Types.ObjectId[]
+  created_by: Schema.Types.ObjectId
   _destroy: boolean
 }
 
@@ -52,13 +53,14 @@ const courseSchema = new Schema<Course>(
     },
     slug: {
       type: String,
-      required: true
+      required: true,
+      unique: true
     },
-
     image: {
       type: String,
       default: ''
     },
+    is_published: { type: Boolean, default: false },
     intro_url: {
       type: String,
       default: ''
@@ -139,6 +141,10 @@ const courseSchema = new Schema<Course>(
       type: String,
       enum: Object.values(CourseLevel),
       default: CourseLevel.BEGINNER
+    },
+    created_by: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
     },
     _destroy: {
       type: Boolean,
