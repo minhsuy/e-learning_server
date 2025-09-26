@@ -3,9 +3,9 @@ import {
   createTeacherController,
   deleteUserByAdminController,
   getAllUsersController,
-  getUserDetailController,
   updateUserByAdminController
 } from '~/controller/admin.controller'
+import { getUserDetailController } from '~/controller/user.controller'
 import {
   createTeacherValidator,
   getAllUsersValidator,
@@ -13,7 +13,8 @@ import {
   updateUserByAdminValidator
 } from '~/middlewares/admin.middleware'
 import { handleValidationErrors } from '~/middlewares/validate'
-import { isAdmin, verifyAccessToken } from '~/middlewares/verifyToken'
+import { isAdmin } from '~/middlewares/verifyRole'
+import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const adminRouter = express.Router()
 // -------- USER ---------

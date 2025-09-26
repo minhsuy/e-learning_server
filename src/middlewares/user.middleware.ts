@@ -1,4 +1,4 @@
-import { body, param } from 'express-validator'
+import { body, param, query } from 'express-validator'
 import jwt, { TokenExpiredError } from 'jsonwebtoken'
 import UserModel from '~/models/user.model'
 import { UserRole } from '~/types/enum'
@@ -154,12 +154,7 @@ export const changePasswordValidator = [
 ]
 
 export const updateMeValidator = [
-  body('username')
-    .optional()
-    .isLength({ min: 3 })
-    .withMessage('Username must be at least 3 characters long')
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('Username can only contain letters, numbers, and underscores'),
+  body('username').optional().isLength({ min: 3 }).withMessage('Username must be at least 3 characters long'),
 
   body('phone').optional().isMobilePhone('vi-VN').withMessage('Invalid phone number'),
 
@@ -172,4 +167,9 @@ export const updateMeValidator = [
   body('socialLinks.instagram').optional().isURL().withMessage('Instagram link must be a valid URL'),
 
   body('socialLinks.github').optional().isURL().withMessage('Github link must be a valid URL')
+]
+export const listTeachersValidator = [
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+  query('search').optional().isString().withMessage('Search must be a string')
 ]

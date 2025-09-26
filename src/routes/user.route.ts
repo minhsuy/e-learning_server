@@ -1,11 +1,12 @@
 import express, { Request, Response } from 'express'
-import { getUserDetailController } from '~/controller/admin.controller'
 import {
   changePasswordController,
   finalRegisterController,
   forgotPasswordController,
+  getListTeachersController,
   getMeController,
   getUserCoursesController,
+  getUserDetailController,
   loginController,
   logoutController,
   registerController,
@@ -17,6 +18,7 @@ import {
   changePasswordValidator,
   finalRegisterValidator,
   forgotPasswordValidator,
+  listTeachersValidator,
   loginValidator,
   registerValidator,
   resetPasswordValidator,
@@ -72,4 +74,7 @@ usersRouter.put(
 // Profile
 usersRouter.get('/profile/:id', getUserDetailValidator, handleValidationErrors, getUserDetailController)
 
+// Get list teacher
+
+usersRouter.get('/teachers', listTeachersValidator, handleValidationErrors, getListTeachersController)
 export default usersRouter

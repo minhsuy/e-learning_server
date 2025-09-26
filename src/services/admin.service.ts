@@ -8,7 +8,9 @@ import { GetAllUsersParams, ICreateTeacherInput } from '~/types/type'
 export const getAllUsersService = async (params: GetAllUsersParams) => {
   const { page = 1, limit = 10, role, status, search, sortBy = 'createdAt' } = params
 
-  const filter: FilterQuery<typeof UserModel> = {}
+  const filter: FilterQuery<typeof UserModel> = {
+    isVerified: ''
+  }
 
   if (role) filter.role = role
   if (status) filter.status = status

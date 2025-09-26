@@ -11,27 +11,7 @@ import {
 // get all users
 
 export const getAllUsersController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { page, limit, role, status, search, sortBy } = req.query
-
-  const result = await getAllUsersService({
-    page: page ? Number(page) : 1,
-    limit: limit ? Number(limit) : 10,
-    role: role as string,
-    status: status as string,
-    search: search as string,
-    sortBy: sortBy as string
-  })
-
-  return res.status(200).json(result)
-})
-
-// get user detail
-export const getUserDetailController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { id } = req.params
-  const result = await getUserDetailService({ id })
-  if (!result.success) {
-    return res.status(404).json(result)
-  }
+  const result = await getAllUsersService(req.query)
   return res.status(200).json(result)
 })
 

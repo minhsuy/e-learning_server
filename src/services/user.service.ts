@@ -8,6 +8,8 @@ import { generateAccessToken, generateRefreshToken, generateVerificationToken } 
 import { ServiceResponse, UpdateMeParams } from '~/types/type'
 import dotenv from 'dotenv'
 import { hashToken } from '~/utils/ultis'
+import { UserRole } from '~/types/enum'
+import { FilterQuery } from 'mongoose'
 
 dotenv.config()
 export const registerUserService = async (payload: {
@@ -252,4 +254,44 @@ export const changePasswordService = async ({
   await user.save()
 
   return { success: true, message: 'Password changed successfully' }
+}
+
+// get list teacher service
+
+export const getListTeachersService = async (params: any) => {
+  const { page = 1, limit = 10, search, sortBy = 'createdAt' } = params
+
+  const filter: FilterQuery<typeof UserModel> = {
+    role: UserRole.TEACHER,
+    isVerified: ''
+  }
+
+  if (search) {
+    filter.$or = [{ username: { $regex: search, $options: 'i' } }, { email: { $regex: search, $options: 'i' } }]
+  }
+
+  const skip = (page - 1) * limit
+
+  const [teachers, total] = await Promise.all([
+    UserModel.find(filter)
+      .select('_id username avatar bio socialLinks createdAt')
+      .sort({ [sortBy]: -1 })
+      .skip(skip)
+      .limit(limit),
+    UserModel.countDocuments(filter)
+  ])
+
+  return {
+    success: true,
+    message: 'Fetched teachers successfully!',
+    data: {
+      teachers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+  }
 }

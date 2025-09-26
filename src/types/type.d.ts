@@ -65,3 +65,14 @@ export interface ICreateTeacherInput {
     }
   }
 }
+export type ListQuery = {
+  page?: number
+  limit?: number
+  search?: string
+  category?: string
+  level?: string
+  type?: string
+  priceMin?: number | string
+  priceMax?: number | string
+  sortBy?: 'createdAt' | 'sold' | 'view' | 'price' | string
+}

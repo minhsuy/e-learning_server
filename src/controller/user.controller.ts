@@ -6,6 +6,7 @@ import dotenv from 'dotenv'
 import {
   changePasswordService,
   forgotPasswordService,
+  getListTeachersService,
   getMeService,
   getUserCoursesService,
   loginUserService,
@@ -15,6 +16,7 @@ import {
   updateMeService,
   verifyUserService
 } from '~/services/user.service'
+import { getUserDetailService } from '~/services/admin.service'
 
 dotenv.config()
 
@@ -164,5 +166,22 @@ export const changePasswordController = asyncHandler(async (req: Request, res: R
     return res.status(400).json(result)
   }
 
+  return res.status(200).json(result)
+})
+
+// get user detail
+export const getUserDetailController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const { id } = req.params
+  const result = await getUserDetailService({ id })
+  if (!result.success) {
+    return res.status(404).json(result)
+  }
+  return res.status(200).json(result)
+})
+
+// get list teacher
+
+export const getListTeachersController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const result = await getListTeachersService(req.query)
   return res.status(200).json(result)
 })

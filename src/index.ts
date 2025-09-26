@@ -12,7 +12,6 @@ connectDB()
 const port = process.env.PORT
 
 app.use(express.json())
-
 indexRoutes(app)
 app.use(errorHandler)
 app.listen(port, () => {

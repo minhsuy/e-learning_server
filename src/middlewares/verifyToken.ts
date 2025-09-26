@@ -1,7 +1,6 @@
 import asyncHandler from 'express-async-handler'
 import dotenv from 'dotenv'
 import { NextFunction, Request, Response } from 'express'
-import { UserRole } from '~/types/enum.js'
 import jwt, { JwtPayload, VerifyOptions } from 'jsonwebtoken'
 import { VerifyTokenParams } from '~/types/type'
 dotenv.config()
@@ -37,44 +36,5 @@ export const verifyRefreshToken = asyncHandler(async (req, res, next) => {
     privateKey: process.env.JWT_SECRECT_REFRESH_TOKEN as string
   })
   req.user = decoded
-  next()
-})
-
-export const isAdmin = asyncHandler((req: Request, res: Response, next: NextFunction): any => {
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'UNAUTHORIZED - No user found in request'
-    })
-  }
-
-  const { role } = req.user
-
-  if (role !== UserRole.ADMIN) {
-    return res.status(403).json({
-      success: false,
-      message: 'FORBIDDEN - Admin role required'
-    })
-  }
-
-  next()
-})
-export const isTeacherOrAdmin = asyncHandler((req: Request, res: Response, next: NextFunction): any => {
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'UNAUTHORIZED - No user found in request'
-    })
-  }
-
-  const { role } = req.user
-
-  if (role !== UserRole.ADMIN && role !== UserRole.TEACHER) {
-    return res.status(403).json({
-      success: false,
-      message: 'FORBIDDEN - Teacher or Admin role required'
-    })
-  }
-
   next()
 })
