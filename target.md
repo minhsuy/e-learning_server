@@ -24,23 +24,25 @@ admin :
 
 course (teacher):
   + create course (Ok)
-  + update course
-  + soft delete course
-  + manage chapters / lessons
+  + update course : Ok
+  + soft delete course : Ok
 
 course (admin):
-  + approve / reject course
-  + force delete course
-  + publish / unpublish
-  + update any course
-
-course (user logged-in):
-  + enroll course (free/paid)
-  + favorite course
-  + rating / review
-  + track progress
-```
+  + approve / reject course : Ok
+  + force delete course : Ok
+  + update any course : Ok
 
 ```
 
+```Category :
+  category (public):
+  + list categories
+  + get category detail
+
+
+category (admin):
+  + create category : ok
+  + update category : ok
+  + soft delete category : ok
+  + force delete category : Ok
 ```

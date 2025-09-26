@@ -9,6 +9,11 @@ import {
   updateCourseByAdminController,
   updateUserByAdminController
 } from '~/controller/admin.controller'
+import {
+  createCategoryController,
+  deleteCategoryController,
+  updateCategoryController
+} from '~/controller/category.controller'
 import { getUserDetailController } from '~/controller/user.controller'
 import {
   createTeacherValidator,
@@ -16,6 +21,7 @@ import {
   getUserDetailValidator,
   updateUserByAdminValidator
 } from '~/middlewares/admin.middleware'
+import { createCategoryValidator, updateCategoryValidator } from '~/middlewares/category.middleware'
 import {
   courseIdValidator,
   createCourseValidator,
@@ -27,7 +33,7 @@ import { isAdmin } from '~/middlewares/verifyRole'
 import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const adminRouter = express.Router()
-// -------- USER ---------
+// -------- USER ---------------------------------------------------------------------------------------
 // Get all users
 adminRouter.get(
   '/users',
@@ -79,7 +85,7 @@ adminRouter.post(
   createTeacherController
 )
 
-// --------- COURSE ---------
+// --------- COURSE --------------------------------------------------------------------------------------
 
 // add course by admin
 adminRouter.post(
@@ -120,6 +126,39 @@ adminRouter.get(
   listPublicCoursesValidator,
   handleValidationErrors,
   getCoursesByAdminController
+)
+
+// -------- CATEGORY  ---------------------------------------------------------------------------------------
+
+// CREATE CATEGORY
+adminRouter.post(
+  '/categories/',
+  verifyAccessToken,
+  isAdmin,
+  createCategoryValidator,
+  handleValidationErrors,
+  createCategoryController
+)
+
+// DELETE CATEGORY
+
+adminRouter.delete(
+  '/categories/:id',
+  verifyAccessToken,
+  isAdmin,
+  courseIdValidator,
+  handleValidationErrors,
+  deleteCategoryController
+)
+
+// UPDATE CATEGORY
+adminRouter.put(
+  '/categories/:id',
+  verifyAccessToken,
+  isAdmin,
+  updateCategoryValidator,
+  handleValidationErrors,
+  updateCategoryController
 )
 
 export default adminRouter
