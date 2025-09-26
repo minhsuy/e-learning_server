@@ -75,4 +75,7 @@ export type ListQuery = {
   priceMin?: number | string
   priceMax?: number | string
   sortBy?: 'createdAt' | 'sold' | 'view' | 'price' | string
+  status?: string
+  author?: string
+  _destroy?: boolean
 }

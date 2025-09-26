@@ -148,6 +148,7 @@ export const getListCoursesService = async (params: ListQuery) => {
   const [courses, total] = await Promise.all([
     CourseModel.find(filter)
       .select('title slug image price old_price level type sold view createdAt')
+      .populate({ path: 'author', select: '_id username email avatar role' })
       .sort({ [sortBy]: -1 })
       .skip(skip)
       .limit(limit),

@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs'
 import { FilterQuery, Types } from 'mongoose'
+import CourseModel from '~/models/course.model'
 import UserModel from '~/models/user.model'
 import { UserRole, UserStatus } from '~/types/enum'
-import { GetAllUsersParams, ICreateTeacherInput } from '~/types/type'
+import { GetAllUsersParams, ICreateTeacherInput, ListQuery } from '~/types/type'
 
 // get all users
 export const getAllUsersService = async (params: GetAllUsersParams) => {
@@ -191,5 +192,138 @@ export const createTeacherService = async ({ payload }: ICreateTeacherInput) => 
     success: true,
     message: 'Teacher created successfully',
     data: safe
+  }
+}
+
+// -------- COURSE ---------
+
+export const updateCourseByAdminService = async ({
+  courseId,
+  payload
+}: {
+  courseId: string
+  payload: Record<string, any>
+}) => {
+  if (!Types.ObjectId.isValid(courseId)) {
+    return { success: false, statusCode: 400, message: 'Invalid course ID' }
+  }
+  const course = await CourseModel.findById(courseId)
+  if (!course) {
+    return { success: false, statusCode: 404, message: 'Course not found' }
+  }
+
+  if (payload.title) course.title = payload.title
+  if (payload.description) course.description = payload.description
+  if (payload.image) course.image = payload.image
+  if (payload.intro_url) course.intro_url = payload.intro_url
+  if (payload.category) course.category = payload.category
+  if (payload.type) course.type = payload.type
+  if (payload.price !== undefined) course.price = payload.price
+  if (payload.old_price !== undefined) course.old_price = payload.old_price
+  if (payload.level) course.level = payload.level
+  if (payload.view !== undefined) course.view = payload.view
+  if (payload.sold !== undefined) course.sold = payload.sold
+  if (payload.status !== undefined) course.status = payload.status
+  if (payload._destroy !== undefined) course._destroy = payload._destroy
+  if (payload.info) {
+    course.info = {
+      ...course.info,
+      ...payload.info
+    }
+  }
+
+  await course.save()
+
+  return {
+    success: true,
+    message: 'Course updated successfully (by admin)!',
+    data: course
+  }
+}
+
+// delete course by admin
+
+export const deleteCourseByAdminService = async ({ courseId }: { courseId: string }) => {
+  if (!Types.ObjectId.isValid(courseId)) {
+    return { success: false, statusCode: 400, message: 'Invalid course ID' }
+  }
+
+  const course = await CourseModel.findById(courseId)
+
+  if (!course) {
+    return { success: false, statusCode: 404, message: 'Course not found' }
+  }
+
+  // Soft delete
+  course._destroy = true
+  await course.save()
+
+  return {
+    success: true,
+    message: 'Course soft-deleted successfully (by admin)!'
+  }
+}
+
+// get course by admin
+
+export const getCoursesByAdminService = async ({ params }: { params: ListQuery }) => {
+  const {
+    page = 1,
+    limit = 10,
+    search,
+    category,
+    level,
+    type,
+    priceMin,
+    priceMax,
+    sortBy = 'createdAt',
+    status,
+    author,
+    _destroy
+  } = params
+
+  const filter: FilterQuery<typeof CourseModel> = {}
+
+  if (search) {
+    filter.$or = [{ title: { $regex: search, $options: 'i' } }]
+  }
+
+  if (category) filter.category = category
+  if (level) filter.level = level
+  if (type) filter.type = type
+  if (status) filter.status = status
+  if (author) filter.author = author
+  if (_destroy !== undefined) filter._destroy = _destroy
+
+  if (priceMin || priceMax) {
+    filter.price = {}
+    if (priceMin) (filter.price as any).$gte = Number(priceMin)
+    if (priceMax) (filter.price as any).$lte = Number(priceMax)
+  }
+
+  const skip = (page - 1) * limit
+
+  const [courses, total] = await Promise.all([
+    CourseModel.find(filter)
+      .select('title slug status image price old_price level type sold view createdAt updatedAt _destroy')
+      .populate({ path: 'author', select: '_id username email avatar role' })
+      .sort({ [sortBy]: -1 })
+      .skip(skip)
+      .limit(limit),
+    CourseModel.countDocuments(filter)
+  ])
+
+  return {
+    success: true,
+    message: 'Fetched all courses successfully!',
+    data: {
+      courses,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
   }
 }

@@ -78,11 +78,21 @@ export const deleteCoursesByTeacherService = async ({
 
 // get courses by teacher
 export const getCoursesByTeacherService = async ({ teacherId, params }: { teacherId: string; params: ListQuery }) => {
-  const { page = 1, limit = 10, search, category, level, type, priceMin, priceMax, sortBy = 'createdAt' } = params
+  const {
+    page = 1,
+    limit = 10,
+    search,
+    status,
+    category,
+    level,
+    type,
+    priceMin,
+    priceMax,
+    sortBy = 'createdAt'
+  } = params
 
   const filter: FilterQuery<typeof CourseModel> = {
-    author: teacherId,
-    _destroy: false
+    author: teacherId
   }
 
   if (search) {
@@ -92,6 +102,7 @@ export const getCoursesByTeacherService = async ({ teacherId, params }: { teache
   if (category) filter.category = category
   if (level) filter.level = level
   if (type) filter.type = type
+  if (status) filter.status = status
 
   if (priceMin || priceMax) {
     filter.price = {}

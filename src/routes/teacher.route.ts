@@ -17,7 +17,7 @@ import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const teacherRouter = express.Router()
 
-// Create new course
+// Create new course (Teacher)
 
 teacherRouter.post(
   '/courses/',
@@ -40,7 +40,7 @@ teacherRouter.put(
 
 // Delete course (Teacher)
 teacherRouter.delete(
-  'courses//:id',
+  'courses/:id',
   verifyAccessToken,
   isTeacher,
   courseIdValidator,

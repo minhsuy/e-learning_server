@@ -1,8 +1,12 @@
 import express, { Request, Response } from 'express'
 import {
+  createCourseByAdminController,
   createTeacherController,
+  deleteCourseByAdminController,
   deleteUserByAdminController,
   getAllUsersController,
+  getCoursesByAdminController,
+  updateCourseByAdminController,
   updateUserByAdminController
 } from '~/controller/admin.controller'
 import { getUserDetailController } from '~/controller/user.controller'
@@ -12,6 +16,12 @@ import {
   getUserDetailValidator,
   updateUserByAdminValidator
 } from '~/middlewares/admin.middleware'
+import {
+  courseIdValidator,
+  createCourseValidator,
+  listPublicCoursesValidator,
+  updateCourseByAdminValidator
+} from '~/middlewares/course.middleware'
 import { handleValidationErrors } from '~/middlewares/validate'
 import { isAdmin } from '~/middlewares/verifyRole'
 import { verifyAccessToken } from '~/middlewares/verifyToken'
@@ -68,4 +78,48 @@ adminRouter.post(
   handleValidationErrors,
   createTeacherController
 )
+
+// --------- COURSE ---------
+
+// add course by admin
+adminRouter.post(
+  '/courses',
+  verifyAccessToken,
+  isAdmin,
+  createCourseValidator,
+  handleValidationErrors,
+  createCourseByAdminController
+)
+
+// update course by admin
+adminRouter.put(
+  '/courses/:id',
+  verifyAccessToken,
+  isAdmin,
+  updateCourseByAdminValidator,
+  handleValidationErrors,
+  updateCourseByAdminController
+)
+
+// delete course by admin
+adminRouter.delete(
+  '/courses/:id',
+  verifyAccessToken,
+  isAdmin,
+  courseIdValidator,
+  handleValidationErrors,
+  deleteCourseByAdminController
+)
+
+// get all course by admin
+
+adminRouter.get(
+  '/courses',
+  verifyAccessToken,
+  isAdmin,
+  listPublicCoursesValidator,
+  handleValidationErrors,
+  getCoursesByAdminController
+)
+
 export default adminRouter
