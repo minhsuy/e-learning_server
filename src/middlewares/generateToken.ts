@@ -8,7 +8,7 @@ export const generateVerificationToken = (userId: string) => {
   })
 }
 export const generateAccessToken = ({ userId, role }: { userId: string; role: string }) => {
-  return jwt.sign({ userId, role }, process.env.JWT_SECRECT_ACCESS_TOKEN as string, { expiresIn: '15m' })
+  return jwt.sign({ userId, role }, process.env.JWT_SECRECT_ACCESS_TOKEN as string, { expiresIn: '1h' })
 }
 
 export const generateRefreshToken = ({ userId }: { userId: string }) => {

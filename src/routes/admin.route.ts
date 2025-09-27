@@ -34,7 +34,7 @@ import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const adminRouter = express.Router()
 // -------- USER ---------------------------------------------------------------------------------------
-// Get all users
+// Get all users  GET /api/admin/users
 adminRouter.get(
   '/users',
   verifyAccessToken,
@@ -44,7 +44,7 @@ adminRouter.get(
   getAllUsersController
 )
 
-// Get detail user
+// Get detail user GET /api/admin/users/:id
 
 adminRouter.get(
   '/users/:id',
@@ -87,7 +87,7 @@ adminRouter.post(
 
 // --------- COURSE --------------------------------------------------------------------------------------
 
-// add course by admin
+// add course by admin   POST /api/admin/courses
 adminRouter.post(
   '/courses',
   verifyAccessToken,
@@ -97,7 +97,7 @@ adminRouter.post(
   createCourseByAdminController
 )
 
-// update course by admin
+// update course by admin PUT /api/admin/courses/:id
 adminRouter.put(
   '/courses/:id',
   verifyAccessToken,
@@ -107,7 +107,7 @@ adminRouter.put(
   updateCourseByAdminController
 )
 
-// delete course by admin
+// delete course by admin DELETE /api/admin/courses/:id
 adminRouter.delete(
   '/courses/:id',
   verifyAccessToken,
@@ -117,7 +117,7 @@ adminRouter.delete(
   deleteCourseByAdminController
 )
 
-// get all course by admin
+// get all course by admin GET /api/admin/courses
 
 adminRouter.get(
   '/courses',
@@ -130,7 +130,7 @@ adminRouter.get(
 
 // -------- CATEGORY  ---------------------------------------------------------------------------------------
 
-// CREATE CATEGORY
+// CREATE CATEGORY  POST /api/admin/categories
 adminRouter.post(
   '/categories/',
   verifyAccessToken,
@@ -140,7 +140,7 @@ adminRouter.post(
   createCategoryController
 )
 
-// DELETE CATEGORY
+// DELETE CATEGORY DELETE /api/admin/categories/:id
 
 adminRouter.delete(
   '/categories/:id',
@@ -151,7 +151,7 @@ adminRouter.delete(
   deleteCategoryController
 )
 
-// UPDATE CATEGORY
+// UPDATE CATEGORY PUT /api/admin/categories/:id
 adminRouter.put(
   '/categories/:id',
   verifyAccessToken,

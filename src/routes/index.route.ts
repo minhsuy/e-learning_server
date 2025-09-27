@@ -1,5 +1,6 @@
 import adminRouter from './admin.route'
 import categoryRouter from './category.route'
+import chapterRouter from './chapter.route'
 import courseRouter from './course.route'
 import teacherRouter from './teacher.route'
 import usersRouter from './user.route'
@@ -10,4 +11,5 @@ export const indexRoutes = (app: any) => {
   app.use('/api/teacher', teacherRouter)
   app.use('/api/courses', courseRouter)
   app.use('/api/categories', categoryRouter)
+  app.use('/api/chapters', chapterRouter)
 }

@@ -7,11 +7,9 @@ import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const categoryRouter = express.Router()
 
-// get list category
-
-// Get list categories (public)
+// Get list categories (public) GET /api/categories
 categoryRouter.get('/', listCategoriesValidator, handleValidationErrors, getCategoriesController)
 
-// Get category detail by slug (public)
+// Get category detail by slug (public) GET /api/categories/:slug
 categoryRouter.get('/:slug', getCategoryDetailValidator, handleValidationErrors, getCategoryDetailController)
 export default categoryRouter

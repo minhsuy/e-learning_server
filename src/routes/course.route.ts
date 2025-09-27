@@ -5,10 +5,10 @@ import { handleValidationErrors } from '~/middlewares/validate'
 
 const courseRouter = express.Router()
 
-// Course detail
+// Course detail GET /api/courses/:slug
 courseRouter.get('/:slug', getCourseDetailPublicController)
 
-// List course
+// List course GET /api/courses
 
 courseRouter.get('/', listPublicCoursesValidator, handleValidationErrors, getListCoursesController)
 

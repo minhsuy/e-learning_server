@@ -17,7 +17,7 @@ import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const teacherRouter = express.Router()
 
-// Create new course (Teacher)
+// Create new course (Teacher) POST /api/teachers/courses
 
 teacherRouter.post(
   '/courses/',
@@ -28,7 +28,7 @@ teacherRouter.post(
   createCourseByTeacherController
 )
 
-// Update course (Teacher)
+// Update course (Teacher) PUT /api/teachers/courses/:id
 teacherRouter.put(
   '/courses/:id',
   verifyAccessToken,
@@ -38,7 +38,7 @@ teacherRouter.put(
   updateCourseByTeacherController
 )
 
-// Delete course (Teacher)
+// Delete course (Teacher) DELETE /api/teachers/courses/:id
 teacherRouter.delete(
   'courses/:id',
   verifyAccessToken,
@@ -48,7 +48,7 @@ teacherRouter.delete(
   deleteCourseByTeacherController
 )
 
-// Get list course by teacher
+// Get list course by teacher GET /api/teachers/courses
 teacherRouter.get(
   '/courses/',
   verifyAccessToken,

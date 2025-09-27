@@ -106,7 +106,7 @@ export const getCourseDetailPublicService = async ({
       'title slug image intro_url description category price old_price type status level view sold info author createdAt updatedAt'
     )
     .populate({ path: 'author', select: '_id username avatar role' })
-  // .populate({ path: 'category', select: '_id name slug' })
+    .populate({ path: 'chapters', select: '_id title' })
 
   if (!course) {
     return { success: false, statusCode: 404, message: 'Course not found' }

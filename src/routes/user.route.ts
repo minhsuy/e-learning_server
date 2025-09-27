@@ -29,39 +29,39 @@ import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const usersRouter = express.Router()
 
-// Register
+// Register POST /api/users/register
 usersRouter.post('/register', registerValidator, handleValidationErrors, registerController)
 
-// Final Register
+// Final Register GET /api/users/finalregister
 usersRouter.get('/finalregister/:token', finalRegisterValidator, finalRegisterController)
 
-// Login
+// Login POST /api/users/login
 usersRouter.post('/login', loginValidator, handleValidationErrors, loginController)
 
-// Get user
+// Get user GET /api/users/me
 
 usersRouter.get('/me', verifyAccessToken, getMeController)
 
-// Get user course
+// Get user course GET /api/users/me/courses
 
 usersRouter.get('/me/courses', verifyAccessToken, getUserCoursesController)
 
-// Logout
+// Logout POST /api/users/logout
 usersRouter.post('/logout', verifyAccessToken, logoutController)
 
-// Forgot password
+// Forgot password POST /api/users/forgot-password
 
 usersRouter.post('/forgot-password', forgotPasswordValidator, handleValidationErrors, forgotPasswordController)
 
-// Reset password
+// Reset password PUT /api/users/reset-password
 
 usersRouter.put('/reset-password', resetPasswordValidator, handleValidationErrors, resetPasswordController)
 
-// Update me
+// Update me PUT /api/users/update-me
 
 usersRouter.put('/update-me', verifyAccessToken, updateMeValidator, handleValidationErrors, updateMeController)
 
-// Change password
+// Change password PUT /api/users/change-password
 
 usersRouter.put(
   '/change-password',
@@ -71,10 +71,10 @@ usersRouter.put(
   changePasswordController
 )
 
-// Profile
+// Profile GET /api/users/profile/:id
 usersRouter.get('/profile/:id', getUserDetailValidator, handleValidationErrors, getUserDetailController)
 
-// Get list teacher
+// Get list teacher GET /api/users/teachers
 
 usersRouter.get('/teachers', listTeachersValidator, handleValidationErrors, getListTeachersController)
 export default usersRouter
