@@ -46,3 +46,25 @@ category (admin):
   + soft delete category : ok
   + force delete category : Ok
 ```
+
+```chapter :
+  + create chapter (admin / teacher) : Ok
+  + Update chapter (admin/chapter) : Ok
+  + Delete chapter (admin/chapter) : Ok
+  + Get list chapter by course : Ok
+```
+
+---
+
+```Lesson :
+  lesson (admin/teacher):
+  + create lesson (thuộc chapter cụ thể)
+  + update lesson
+  + delete lesson (soft delete)
+  + reorder lessons trong chapter (optional)
+  + get lesson detail (theo id hoặc slug)
+  + list lessons by chapter
+
+lesson (public):
+  + get lesson detail (chỉ khi course đã Approved và user có quyền xem – ví dụ đã mua hoặc course free) : Pending
+```

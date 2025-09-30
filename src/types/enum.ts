@@ -23,3 +23,8 @@ export enum CourseType {
   PAID = 'paid',
   FREE = 'free'
 }
+
+export enum LessonType {
+  VIDEO = 'video',
+  TEXT = 'text'
+}

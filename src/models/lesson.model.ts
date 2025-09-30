@@ -1,9 +1,6 @@
 import { model, models, Schema } from 'mongoose'
+import { LessonType } from '~/types/enum'
 
-export enum LessonType {
-  VIDEO = 'video',
-  TEXT = 'text'
-}
 export interface Lesson extends Document {
   _id: Schema.Types.ObjectId
   title: string
