@@ -109,7 +109,7 @@ export const getCourseDetailPublicService = async ({
     .populate({
       path: 'chapters',
       select: '_id title',
-      populate: { path: 'lessons', select: 'title duration ' }
+      populate: { path: 'lessons', select: 'title duration isDemo' }
     })
 
   if (!course) {

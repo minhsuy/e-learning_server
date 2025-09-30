@@ -28,3 +28,8 @@ export enum LessonType {
   VIDEO = 'video',
   TEXT = 'text'
 }
+
+export enum ECouponType {
+  PERCENTAGE = 'percentage',
+  NUMBER = 'number'
+}

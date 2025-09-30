@@ -1,9 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose'
+import { ECouponType } from '~/types/enum'
 
-export enum ECouponType {
-  PERCENTAGE = 'percentage',
-  NUMBER = 'number'
-}
 export interface ICoupon extends Document {
   _id: string
   title: string
@@ -16,7 +13,7 @@ export interface ICoupon extends Document {
   courses: Schema.Types.ObjectId[]
   type: ECouponType
   value: number
-  __v: number
+  author: Schema.Types.ObjectId
 }
 const couponSchema = new mongoose.Schema<ICoupon>(
   {
@@ -59,10 +56,14 @@ const couponSchema = new mongoose.Schema<ICoupon>(
     used: {
       type: Number,
       default: 0
+    },
+    author: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
     }
   },
   { timestamps: true }
 )
 
-const Coupon = mongoose.models.Coupon || mongoose.model('Coupon', couponSchema)
-export default Coupon
+const CouponModel = mongoose.models.Coupon || mongoose.model('Coupon', couponSchema)
+export default CouponModel
