@@ -33,3 +33,8 @@ export enum ECouponType {
   PERCENTAGE = 'percentage',
   NUMBER = 'number'
 }
+export enum EOrderStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  REJECTED = 'rejected'
+}

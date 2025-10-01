@@ -4,6 +4,7 @@ import chapterRouter from './chapter.route'
 import couponRouter from './coupon.route'
 import courseRouter from './course.route'
 import lessonRouter from './lesson.route'
+import orderRouter from './order.route'
 import teacherRouter from './teacher.route'
 import usersRouter from './user.route'
 
@@ -16,4 +17,5 @@ export const indexRoutes = (app: any) => {
   app.use('/api/chapters', chapterRouter)
   app.use('/api/lessons', lessonRouter)
   app.use('/api/coupons', couponRouter)
+  app.use('/api/orders', orderRouter)
 }

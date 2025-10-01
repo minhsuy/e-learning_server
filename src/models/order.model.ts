@@ -1,10 +1,6 @@
 import mongoose, { models, Schema } from 'mongoose'
+import { EOrderStatus } from '~/types/enum'
 
-export enum EOrderStatus {
-  PENDING = 'pending',
-  COMPLETED = 'completed',
-  REJECTED = 'rejected'
-}
 export interface IOrder {
   _id: string
   code: string
