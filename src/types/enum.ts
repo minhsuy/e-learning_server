@@ -38,3 +38,17 @@ export enum EOrderStatus {
   COMPLETED = 'completed',
   REJECTED = 'rejected'
 }
+export enum EEnrollmentStatus {
+  ACTIVE = 'active',
+  COMPLETED = 'completed',
+  CANCELED = 'canceled'
+}
+export enum CommentStatus {
+  APPROVED = 'approved',
+  PENDING = 'pending',
+  REJECTED = 'rejected'
+}
+export enum ERatingStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive'
+}

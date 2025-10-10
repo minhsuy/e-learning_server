@@ -1,10 +1,15 @@
 import adminRouter from './admin.route'
 import categoryRouter from './category.route'
 import chapterRouter from './chapter.route'
+import commentRouter from './comment.route'
 import couponRouter from './coupon.route'
 import courseRouter from './course.route'
+import enrollmentRouter from './enrollment.route'
+import favoriteCourseRouter from './favoriteCourse.route'
 import lessonRouter from './lesson.route'
 import orderRouter from './order.route'
+import progressRouter from './progress.route'
+import ratingRouter from './rating.route'
 import teacherRouter from './teacher.route'
 import usersRouter from './user.route'
 
@@ -18,4 +23,9 @@ export const indexRoutes = (app: any) => {
   app.use('/api/lessons', lessonRouter)
   app.use('/api/coupons', couponRouter)
   app.use('/api/orders', orderRouter)
+  app.use('/api/progress', progressRouter)
+  app.use('/api/enrollments', enrollmentRouter)
+  app.use('/api/comments', commentRouter)
+  app.use('/api/ratings', ratingRouter)
+  app.use('/api/favorites', favoriteCourseRouter)
 }

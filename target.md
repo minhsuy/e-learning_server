@@ -68,3 +68,20 @@ category (admin):
 lesson (public):
   + get lesson detail (chỉ khi course đã Approved và user có quyền xem – ví dụ đã mua hoặc course free) : Pending
 ```
+
+---
+
+```enrollment :
+
+  enrollment (student):
+  + get my enrolled courses (liệt kê tất cả khóa học mà học viên đã đăng ký/mua)
+
+  enrollment (teacher):
+  + get students by course (lấy danh sách học viên của một khóa học cụ thể)
+  + kick student from course (xóa học viên khỏi khóa học của mình)
+
+  enrollment (admin):
+  + get all enrollments (phân trang, tìm kiếm, lọc theo course, user, status...)
+  + force remove enrollment (xóa enrollment bất kỳ)
+
+```

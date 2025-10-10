@@ -8,7 +8,6 @@ import {
   forgotPasswordService,
   getListTeachersService,
   getMeService,
-  getUserCoursesService,
   loginUserService,
   logoutUserService,
   registerUserService,
@@ -78,19 +77,6 @@ export const getMeController = asyncHandler(async (req: Request, res: Response):
     message: user.message,
     data: user.data
   })
-})
-
-// Get my course
-
-export const getUserCoursesController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { userId } = req.user as { userId: string }
-
-  const result = await getUserCoursesService({ userId })
-
-  if (!result.success) {
-    return res.status(404).json(result)
-  }
-  return res.status(200).json(result)
 })
 
 // Logout user

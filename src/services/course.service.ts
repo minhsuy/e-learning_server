@@ -1,5 +1,4 @@
 import { FilterQuery, Types } from 'mongoose'
-import slugify from 'slugify'
 import CourseModel from '~/models/course.model'
 import { CourseLevel, CourseStatus, CourseType, UserRole } from '~/types/enum'
 import { ListQuery } from '~/types/type'

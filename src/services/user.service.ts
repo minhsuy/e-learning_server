@@ -105,41 +105,6 @@ export const getMeService = async ({ userId }: { userId: string }): Promise<Serv
   }
 }
 
-export const getUserCoursesService = async ({ userId }: { userId: string }): Promise<ServiceResponse> => {
-  if (!userId) {
-    return {
-      success: false,
-      message: 'User not found !'
-    }
-  }
-
-  const user = await UserModel.findById(userId)
-    .populate({
-      path: 'courses',
-      populate: {
-        path: 'chapters',
-        populate: {
-          path: 'lessons'
-        }
-      }
-    })
-    .select('courses')
-    .lean()
-
-  if (!user) {
-    return {
-      success: false,
-      message: 'User not found'
-    }
-  }
-
-  return {
-    success: true,
-    message: 'Get my courses successfully !',
-    data: user.courses
-  }
-}
-
 // logout service
 
 export const logoutUserService = async ({ userId }: { userId: string }): Promise<ServiceResponse> => {

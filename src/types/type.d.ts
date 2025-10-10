@@ -25,6 +25,7 @@ export interface ServiceResponse<T = any> {
   data?: T
   access_token?: string
   refresh_token?: string
+  statusCode?: number
 }
 
 export interface UpdateMeParams {

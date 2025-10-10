@@ -3,6 +3,7 @@ import jwt, { TokenExpiredError } from 'jsonwebtoken'
 import UserModel from '~/models/user.model'
 import { UserRole } from '~/types/enum'
 import dotenv from 'dotenv'
+import mongoose from 'mongoose'
 
 dotenv.config()
 export const registerValidator = [
@@ -172,4 +173,12 @@ export const listTeachersValidator = [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
   query('search').optional().isString().withMessage('Search must be a string')
+]
+
+export const userIdValidator = [
+  param('userId')
+    .notEmpty()
+    .withMessage('User ID is required')
+    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .withMessage('Invalid User ID')
 ]

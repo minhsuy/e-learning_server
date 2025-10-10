@@ -5,7 +5,6 @@ import {
   forgotPasswordController,
   getListTeachersController,
   getMeController,
-  getUserCoursesController,
   getUserDetailController,
   loginController,
   logoutController,
@@ -41,10 +40,6 @@ usersRouter.post('/login', loginValidator, handleValidationErrors, loginControll
 // Get user GET /api/users/me
 
 usersRouter.get('/me', verifyAccessToken, getMeController)
-
-// Get user course GET /api/users/me/courses
-
-usersRouter.get('/me/courses', verifyAccessToken, getUserCoursesController)
 
 // Logout POST /api/users/logout
 usersRouter.post('/logout', verifyAccessToken, logoutController)

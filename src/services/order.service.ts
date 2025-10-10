@@ -4,6 +4,7 @@ import CourseModel from '~/models/course.model'
 import CouponModel from '~/models/coupon.model'
 import { ECouponType, EOrderStatus, UserRole } from '~/types/enum'
 import UserModel from '~/models/user.model'
+import EnrollmentModel from '~/models/enrollment.model'
 
 export const createOrderService = async ({
   userId,
@@ -106,7 +107,13 @@ export const createOrderService = async ({
   if (status === EOrderStatus.COMPLETED) {
     await Promise.all([
       UserModel.findByIdAndUpdate(userId, { $addToSet: { courses: courseId } }),
-      CourseModel.findByIdAndUpdate(courseId, { $inc: { sold: 1 } })
+      CourseModel.findByIdAndUpdate(courseId, { $inc: { sold: 1 } }),
+      EnrollmentModel.create({
+        user: new Types.ObjectId(userId),
+        course: new Types.ObjectId(courseId),
+        enrolledAt: new Date(),
+        progress: 0
+      })
     ])
   }
 
@@ -207,7 +214,12 @@ export const updateOrderStatusService = async ({
   if (status === EOrderStatus.COMPLETED) {
     const ops: Promise<any>[] = [
       UserModel.findByIdAndUpdate(order.user, { $addToSet: { courses: order.course } }),
-      CourseModel.findByIdAndUpdate(order.course, { $inc: { sold: 1 } })
+      CourseModel.findByIdAndUpdate(order.course, { $inc: { sold: 1 } }),
+      EnrollmentModel.findOneAndUpdate(
+        { user: order.user, course: order.course },
+        { user: order.user, course: order.course, enrolledAt: new Date() },
+        { upsert: true }
+      )
     ]
     if (order.coupon) {
       ops.push(CouponModel.findByIdAndUpdate(order.coupon, { $inc: { used: 1 } }))
