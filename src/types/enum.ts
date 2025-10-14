@@ -52,3 +52,18 @@ export enum ERatingStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive'
 }
+export enum ENotificationType {
+  COMMENT = 'comment',
+  RATING = 'rating',
+  ORDER = 'order',
+  MESSAGE = 'message',
+  SYSTEM = 'system',
+  COURSE = 'course',
+  LESSON = 'lesson',
+  COMMENT_REPLY = 'comment_reply'
+}
+
+export enum QuestionType {
+  MULTIPLE_CHOICE = 'multiple_choice',
+  FILL_IN_BLANK = 'fill_in_blank'
+}

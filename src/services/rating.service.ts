@@ -3,7 +3,8 @@ import CourseModel from '../models/course.model'
 import UserModel from '../models/user.model'
 import { FilterQuery, Types } from 'mongoose'
 import { ServiceResponse } from '~/types/type'
-import { ERatingStatus, UserRole } from '~/types/enum'
+import { ENotificationType, ERatingStatus, UserRole } from '~/types/enum'
+import { pushNotificationService } from './notification.service'
 
 export const createNewRatingService = async ({
   courseId,
@@ -21,7 +22,7 @@ export const createNewRatingService = async ({
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
-  const user = await UserModel.findById(userId).select('courses')
+  const user = await UserModel.findById(userId).select('courses username')
   if (!user) {
     return { success: false, statusCode: 404, message: 'User not found' }
   }
@@ -45,7 +46,15 @@ export const createNewRatingService = async ({
   })
   course.rating.push(rating._id)
   await course.save()
-
+  if (course.author.toString() !== userId) {
+    await pushNotificationService({
+      senderId: userId,
+      receiverId: course.author.toString(),
+      type: ENotificationType.RATING,
+      message: `${user.username} vừa đánh giá khóa học "${course.title}" với ${rate} sao: "${content}"`,
+      relatedId: rating._id.toString()
+    })
+  }
   return {
     success: true,
     message: 'Rating created successfully',

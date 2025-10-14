@@ -1,8 +1,10 @@
 import { FilterQuery, Types } from 'mongoose'
 import CourseModel from '~/models/course.model'
-import { CourseLevel, CourseStatus, CourseType, UserRole } from '~/types/enum'
+import UserModel from '~/models/user.model'
+import { CourseLevel, CourseStatus, CourseType, ENotificationType, UserRole } from '~/types/enum'
 import { ListQuery } from '~/types/type'
 import { toBaseSlug } from '~/utils/ultis'
+import { pushNotificationService } from './notification.service'
 
 export const createCourseService = async ({
   author,
@@ -74,7 +76,19 @@ export const createCourseService = async ({
     created_by: new Types.ObjectId(author),
     info: safeInfo
   })
-
+  if (role === UserRole.TEACHER) {
+    const admins = await UserModel.find({ role: UserRole.ADMIN }).select('_id username')
+    const teacher = await UserModel.findById(author).select('username')
+    for (const admin of admins) {
+      await pushNotificationService({
+        senderId: author,
+        receiverId: admin._id.toString(),
+        type: ENotificationType.COURSE,
+        message: `Teacher ${teacher?.username} vừa tạo khóa học "${doc.title}"`,
+        relatedId: doc._id.toString()
+      })
+    }
+  }
   return {
     success: true,
     message: 'Course created (pending approval)',

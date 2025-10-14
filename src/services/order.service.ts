@@ -2,9 +2,10 @@ import { FilterQuery, Types } from 'mongoose'
 import OrderModel from '~/models/order.model'
 import CourseModel from '~/models/course.model'
 import CouponModel from '~/models/coupon.model'
-import { ECouponType, EOrderStatus, UserRole } from '~/types/enum'
+import { ECouponType, ENotificationType, EOrderStatus, UserRole } from '~/types/enum'
 import UserModel from '~/models/user.model'
 import EnrollmentModel from '~/models/enrollment.model'
+import { pushNotificationService } from './notification.service'
 
 export const createOrderService = async ({
   userId,
@@ -116,7 +117,13 @@ export const createOrderService = async ({
       })
     ])
   }
-
+  await pushNotificationService({
+    senderId: userId,
+    receiverId: course.author.toString(),
+    type: ENotificationType.ORDER,
+    message: `Học viên vừa đăng ký khóa học "${course.title}"`,
+    relatedId: order._id.toString()
+  })
   return {
     success: true,
     message: 'Order created successfully',
@@ -229,6 +236,13 @@ export const updateOrderStatusService = async ({
     ops.push(order.save())
 
     await Promise.all(ops)
+    await pushNotificationService({
+      senderId: null,
+      receiverId: order.user.toString(),
+      type: ENotificationType.ORDER,
+      message: `Đơn hàng "${order.code}" của bạn đã được hoàn tất !`,
+      relatedId: order._id.toString()
+    })
     return {
       success: true,
       message: 'Order completed successfully!'

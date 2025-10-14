@@ -12,11 +12,12 @@ import {
 } from '~/services/comment.service'
 
 export const createCommentController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { userId } = req.user as { userId: string }
+  const { userId, role } = req.user as { userId: string; role: string }
 
   const result = await createCommentService({
     ...req.body,
-    userId
+    userId,
+    role
   })
 
   return res.status(result.statusCode || 200).json(result)

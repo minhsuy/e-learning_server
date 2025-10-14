@@ -2,34 +2,48 @@ import { FilterQuery, Types } from 'mongoose'
 import CommentModel from '~/models/comment.model'
 import CourseModel from '~/models/course.model'
 import UserModel from '~/models/user.model'
-import { CommentStatus, UserRole } from '~/types/enum'
+import { CommentStatus, ENotificationType, UserRole } from '~/types/enum'
 import { ServiceResponse } from '~/types/type'
+import { pushNotificationService } from './notification.service'
 
 export const createCommentService = async ({
   content,
   lesson,
   course,
   parentId,
-  userId
+  userId,
+  role
 }: {
   content: string
   lesson: string
   course: string
   parentId?: string
   userId: string
+  role: string
 }): Promise<ServiceResponse> => {
-  const checkUserCourse = await UserModel.findById(userId).select('courses')
-  if (!checkUserCourse) {
-    return { success: false, statusCode: 404, message: 'User not found' }
+  const courseDoc = await CourseModel.findById(course).select('author title')
+  if (!courseDoc) {
+    return { success: false, statusCode: 404, message: 'Course not found' }
   }
-  const isEnrolled = checkUserCourse.courses.some((course: any) => course._id.toString() === course.toString())
 
-  if (!isEnrolled) {
-    return { success: false, statusCode: 403, message: 'You are not enrolled in this course' }
+  if (role === UserRole.TEACHER && courseDoc.author.toString() !== userId) {
+    return { success: false, statusCode: 403, message: 'You are not the owner of this course' }
+  }
+
+  if (role !== UserRole.TEACHER) {
+    const checkUserCourse = await UserModel.findById(userId).select('courses')
+    if (!checkUserCourse) {
+      return { success: false, statusCode: 404, message: 'User not found' }
+    }
+    const isEnrolled = checkUserCourse.courses.some((c: any) => c.toString() === course.toString())
+    if (!isEnrolled) {
+      return { success: false, statusCode: 403, message: 'You are not enrolled in this course' }
+    }
   }
   let level = 0
+  let parentComment
   if (parentId) {
-    const parentComment = await CommentModel.findById(parentId)
+    parentComment = await CommentModel.findById(parentId)
     if (!parentComment) {
       return { success: false, statusCode: 404, message: 'Parent comment not found' }
     }
@@ -45,6 +59,26 @@ export const createCommentService = async ({
     level,
     status: CommentStatus.APPROVED
   })
+
+  if (parentId && parentComment && parentComment?.user.toString() !== userId) {
+    const senderUser = await UserModel.findById(userId).select('username')
+    await pushNotificationService({
+      senderId: userId,
+      receiverId: parentComment.user.toString(),
+      type: ENotificationType.COMMENT_REPLY,
+      message: `${senderUser?.username || 'Người dùng'} vừa trả lời bình luận của bạn: "${content}`,
+      relatedId: lesson
+    })
+  } else if (!parentId && courseDoc.author.toString() !== userId) {
+    const commenter = await UserModel.findById(userId).select('username')
+    await pushNotificationService({
+      senderId: userId,
+      receiverId: courseDoc.author.toString(),
+      type: ENotificationType.COMMENT,
+      message: `Học viên ${commenter?.username} vừa bình luận về khóa học "${courseDoc.title}"`,
+      relatedId: lesson
+    })
+  }
 
   return {
     success: true,

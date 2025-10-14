@@ -80,3 +80,37 @@ export type ListQuery = {
   author?: string
   _destroy?: boolean
 }
+export interface UpdateQuizParams {
+  quizId: string
+  userId: string
+  role: string
+  payload: {
+    title?: string
+    description?: string
+    duration?: number
+    passing_grade?: number
+  }
+}
+export interface CreateQuizParams {
+  userId: string
+  role: string
+  payload: {
+    lesson: string
+    title: string
+    description?: string
+    duration?: number
+    passing_grade?: number
+  }
+}
+export interface CreateQuestionParams {
+  userId: string
+  role: string
+  payload: {
+    quiz: string
+    type: 'multiple_choice' | 'fill_in_blank'
+    title: string
+    options?: string[]
+    answer: string
+    points?: number
+  }
+}

@@ -7,8 +7,11 @@ import courseRouter from './course.route'
 import enrollmentRouter from './enrollment.route'
 import favoriteCourseRouter from './favoriteCourse.route'
 import lessonRouter from './lesson.route'
+import notificationRouter from './notification.route'
 import orderRouter from './order.route'
 import progressRouter from './progress.route'
+import questionRouter from './question.route'
+import quizRouter from './quiz.route'
 import ratingRouter from './rating.route'
 import teacherRouter from './teacher.route'
 import usersRouter from './user.route'
@@ -28,4 +31,7 @@ export const indexRoutes = (app: any) => {
   app.use('/api/comments', commentRouter)
   app.use('/api/ratings', ratingRouter)
   app.use('/api/favorites', favoriteCourseRouter)
+  app.use('/api/notifications', notificationRouter)
+  app.use('/api/quiz', quizRouter)
+  app.use('/api/questions', questionRouter)
 }

@@ -1,9 +1,10 @@
 import bcrypt from 'bcryptjs'
 import { FilterQuery, Types } from 'mongoose'
 import CourseModel from '~/models/course.model'
-import UserModel from '~/models/user.model'
-import { UserRole, UserStatus } from '~/types/enum'
+import UserModel, { User } from '~/models/user.model'
+import { CourseStatus, ENotificationType, UserRole, UserStatus } from '~/types/enum'
 import { GetAllUsersParams, ICreateTeacherInput, ListQuery } from '~/types/type'
+import { pushNotificationService } from './notification.service'
 
 // get all users
 export const getAllUsersService = async (params: GetAllUsersParams) => {
@@ -325,5 +326,52 @@ export const getCoursesByAdminService = async ({ params }: { params: ListQuery }
         totalPages: Math.ceil(total / limit)
       }
     }
+  }
+}
+
+// update status course for teacher :
+
+export const updateCourseStatusForTeacherService = async ({
+  courseId,
+  payload
+}: {
+  courseId: string
+  payload: Record<string, any>
+}) => {
+  if (!Types.ObjectId.isValid(courseId)) {
+    return { success: false, statusCode: 400, message: 'Invalid course ID' }
+  }
+
+  const course = await CourseModel.findById(courseId).populate<{ author: User }>('author', 'username')
+
+  if (!course) {
+    return { success: false, statusCode: 404, message: 'Course not found' }
+  }
+
+  const previousStatus = course.status
+
+  if (payload.status !== undefined) {
+    course.status = payload.status
+  }
+
+  await course.save()
+
+  if (previousStatus !== CourseStatus.APPROVED && course.status === CourseStatus.APPROVED) {
+    const teacherId = course.author._id.toString()
+    const teacherName = course.author.username
+
+    await pushNotificationService({
+      senderId: null,
+      receiverId: teacherId,
+      type: ENotificationType.COURSE,
+      message: `Khóa học "${course.title}" của bạn đã được admin duyệt!`,
+      relatedId: course._id.toString()
+    })
+  }
+
+  return {
+    success: true,
+    message: 'Course updated successfully (by teacher/admin)!',
+    data: course
   }
 }

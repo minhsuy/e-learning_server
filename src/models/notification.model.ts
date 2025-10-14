@@ -1,5 +1,5 @@
-import { ENotificationType } from './../src/types/enum'
 import mongoose, { Document } from 'mongoose'
+import { ENotificationType } from '~/types/enum'
 
 export interface INotification extends Document {
   sender?: mongoose.Types.ObjectId

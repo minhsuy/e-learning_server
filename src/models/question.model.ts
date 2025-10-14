@@ -1,9 +1,5 @@
 import { Schema, model, Document } from 'mongoose'
-
-export enum QuestionType {
-  MULTIPLE_CHOICE = 'multiple_choice',
-  FILL_IN_BLANK = 'fill_in_blank'
-}
+import { QuestionType } from '~/types/enum'
 
 export interface Question extends Document {
   quiz: Schema.Types.ObjectId
@@ -24,6 +20,7 @@ const QuestionSchema = new Schema<Question>(
     type: {
       type: String,
       enum: Object.values(QuestionType),
+      default: QuestionType.MULTIPLE_CHOICE,
       required: true
     },
     title: {

@@ -2,8 +2,10 @@ import { Types } from 'mongoose'
 import LessonModel from '~/models/lesson.model'
 import CourseModel from '~/models/course.model'
 import ChapterModel from '~/models/chapter.model'
-import { LessonType, UserRole } from '~/types/enum'
+import { ENotificationType, LessonType, UserRole } from '~/types/enum'
 import slugify from 'slugify'
+import EnrollmentModel from '~/models/enrollment.model'
+import { pushNotificationService } from './notification.service'
 
 export const createLessonService = async ({
   payload,
@@ -67,7 +69,17 @@ export const createLessonService = async ({
 
   chapterDoc.lessons.push(lesson._id)
   await chapterDoc.save()
+  const enrollments = await EnrollmentModel.find({ course: courseDoc._id, status: 'active' }).select('user')
 
+  for (const enrollment of enrollments) {
+    await pushNotificationService({
+      senderId: userId,
+      receiverId: enrollment.user.toString(),
+      type: ENotificationType.LESSON,
+      message: `Có bài học mới "${lesson.title}" trong khóa học "${courseDoc.title}"`,
+      relatedId: lesson._id.toString()
+    })
+  }
   return {
     success: true,
     message: 'Lesson created successfully!',

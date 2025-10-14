@@ -8,6 +8,7 @@ import {
   getCoursesByAdminService,
   getUserDetailService,
   updateCourseByAdminService,
+  updateCourseStatusForTeacherService,
   updateUserByAdminService
 } from '~/services/admin.service'
 import { createCourseService } from '~/services/course.service'
@@ -88,3 +89,12 @@ export const getCoursesByAdminController = asyncHandler(async (req: Request, res
   const result = await getCoursesByAdminService({ params: req.query })
   return res.status(200).json(result)
 })
+
+// update course status for teacher
+export const updateCourseStatusForTeacherController = asyncHandler(
+  async (req: Request, res: Response): Promise<any> => {
+    const { id } = req.params
+    const result = await updateCourseStatusForTeacherService({ courseId: id, payload: req.body })
+    return res.status(result.success ? 200 : result.statusCode || 400).json(result)
+  }
+)

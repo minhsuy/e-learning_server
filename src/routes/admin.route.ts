@@ -7,6 +7,7 @@ import {
   getAllUsersController,
   getCoursesByAdminController,
   updateCourseByAdminController,
+  updateCourseStatusForTeacherController,
   updateUserByAdminController
 } from '~/controller/admin.controller'
 import {
@@ -126,6 +127,16 @@ adminRouter.get(
   listPublicCoursesValidator,
   handleValidationErrors,
   getCoursesByAdminController
+)
+
+// Update status course for teacher
+adminRouter.patch(
+  '/courses/teacher/:id',
+  verifyAccessToken,
+  isAdmin,
+  listPublicCoursesValidator,
+  handleValidationErrors,
+  updateCourseStatusForTeacherController
 )
 
 // -------- CATEGORY  ---------------------------------------------------------------------------------------
