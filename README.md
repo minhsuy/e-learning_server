@@ -29,6 +29,7 @@ Realtime messaging with teachers for direct Q&A.
 
 ⚙️ Technical Highlights
 
+```
 Backend: Node.js, Express, TypeScript
 
 Database: MongoDB (Mongoose ODM)
@@ -42,9 +43,11 @@ Authentication: JWT + Role-based Access Control
 Architecture: Service-controller-middleware structure with async handlers
 
 Deployment Ready: Modular setup for AWS / Docker integration
+```
 
 💬 Realtime Chat System
 
+```
 The platform includes a full conversation/message system:
 
 One-to-one and group chat models (Conversation, Message)
@@ -54,9 +57,12 @@ Realtime message delivery via Socket.IO rooms (io.to(conversationId).emit(...))
 Message editing, deletion, and synchronization across clients
 
 Automatic enrollment sync: when a student joins a course, they are auto-added to the course Q&A chat group.
+```
 
 🧾 Certificate Generation
 
+```
 Students automatically receive a certificate PDF once progress ≥ 70 % and quiz score ≥ 60 %.
 
 Certificates are generated with PDFKit and stored on Cloudinary — downloadable anytime.
+```
