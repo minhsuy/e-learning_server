@@ -8,7 +8,7 @@ import { User } from '~/models/user.model'
 import QuestionModel from '~/models/question.model'
 
 export const createQuizService = async ({ userId, role, payload }: CreateQuizParams): Promise<ServiceResponse> => {
-  const { lesson, title, description, duration, passing_grade } = payload
+  const { lesson, title, description, duration, passing_grade, courseId } = payload
 
   const lessonDoc = await LessonModel.findById(lesson)
     .populate<{ course: Course & { author: User } }>('course', 'author _id title')
@@ -31,7 +31,8 @@ export const createQuizService = async ({ userId, role, payload }: CreateQuizPar
     duration: duration || 0,
     passing_grade: passing_grade || 0,
     questions: [],
-    created_by: new Types.ObjectId(userId)
+    created_by: new Types.ObjectId(userId),
+    courseId
   })
 
   return { success: true, message: 'Quiz created successfully', data: quiz }
@@ -99,4 +100,22 @@ export const deleteQuizService = async ({
   await quiz.deleteOne()
 
   return { success: true, message: 'Quiz and its questions deleted successfully' }
+}
+
+// get quiz for lesson
+export const getQuizzesByLessonService = async (lessonId: string): Promise<ServiceResponse> => {
+  const quizzes = await QuizModel.find({ lesson: lessonId }).populate({
+    path: 'questions',
+    select: 'title options points'
+  })
+
+  if (!quizzes || quizzes.length === 0) {
+    return { success: false, statusCode: 404, message: 'No quizzes found for this lesson' }
+  }
+
+  return {
+    success: true,
+    message: 'Quizzes fetched successfully',
+    data: quizzes
+  }
 }

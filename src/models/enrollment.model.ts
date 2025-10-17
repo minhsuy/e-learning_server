@@ -1,5 +1,6 @@
 import { Schema, model, Types } from 'mongoose'
 import { EEnrollmentStatus } from '~/types/enum'
+import ConversationModel from './conversation.model'
 
 export interface IEnrollment {
   _id: string

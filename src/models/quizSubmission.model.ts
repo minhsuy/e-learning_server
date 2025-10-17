@@ -1,11 +1,14 @@
 import { Schema, model, Document } from 'mongoose'
 
 export interface QuizSubmission extends Document {
+  _id: Schema.Types.ObjectId
   quiz: Schema.Types.ObjectId
   user: Schema.Types.ObjectId
   answers: { question: Schema.Types.ObjectId; selectedAnswer: string }[]
   score: number
   completedAt: Date
+  totalPoints: number
+  percentage: number
 }
 
 const QuizSubmissionSchema = new Schema<QuizSubmission>(
@@ -27,6 +30,14 @@ const QuizSubmissionSchema = new Schema<QuizSubmission>(
       }
     ],
     score: {
+      type: Number,
+      default: 0
+    },
+    totalPoints: {
+      type: Number,
+      default: 0
+    },
+    percentage: {
       type: Number,
       default: 0
     },

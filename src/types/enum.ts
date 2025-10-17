@@ -60,10 +60,17 @@ export enum ENotificationType {
   SYSTEM = 'system',
   COURSE = 'course',
   LESSON = 'lesson',
-  COMMENT_REPLY = 'comment_reply'
+  COMMENT_REPLY = 'comment_reply',
+  QUIZ = 'quiz'
 }
 
 export enum QuestionType {
   MULTIPLE_CHOICE = 'multiple_choice',
   FILL_IN_BLANK = 'fill_in_blank'
+}
+
+export enum EMessageType {
+  TEXT = 'text',
+  IMAGE = 'image',
+  FILE = 'file'
 }

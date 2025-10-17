@@ -6,6 +6,7 @@ import { ECouponType, ENotificationType, EOrderStatus, UserRole } from '~/types/
 import UserModel from '~/models/user.model'
 import EnrollmentModel from '~/models/enrollment.model'
 import { pushNotificationService } from './notification.service'
+import ConversationModel from '~/models/conversation.model'
 
 export const createOrderService = async ({
   userId,
@@ -236,6 +237,26 @@ export const updateOrderStatusService = async ({
     ops.push(order.save())
 
     await Promise.all(ops)
+    const courseConversation = await ConversationModel.findOne({
+      course: order.course,
+      isGroup: true
+    })
+
+    if (courseConversation) {
+      const alreadyJoined = courseConversation.participants.some((id) => id.toString() === order.user.toString())
+      if (!alreadyJoined) {
+        courseConversation.participants.push(order.user)
+        await courseConversation.save()
+      }
+    } else {
+      const course = await CourseModel.findById(order.course).select('author')
+      await ConversationModel.create({
+        course: order.course,
+        name: `Q&A - ${course?.title}`,
+        participants: [order.user, course?.author],
+        isGroup: true
+      })
+    }
     await pushNotificationService({
       senderId: null,
       receiverId: order.user.toString(),

@@ -100,6 +100,7 @@ export interface CreateQuizParams {
     description?: string
     duration?: number
     passing_grade?: number
+    courseId: string
   }
 }
 export interface CreateQuestionParams {

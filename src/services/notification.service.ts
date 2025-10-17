@@ -60,7 +60,6 @@ export const pushNotificationService = async ({
     relatedId
   })
 
-  // Emit realtime Socket.IO
   const io = getIO()
   io.to(`${receiverId}`).emit('new_notification', notification)
 

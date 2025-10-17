@@ -9,7 +9,8 @@ export const createQuizValidator = [
     .withMessage('Invalid Lesson ID'),
   body('title').notEmpty().withMessage('Quiz title is required'),
   body('duration').optional().isNumeric().withMessage('Duration must be a number'),
-  body('passing_grade').optional().isNumeric().withMessage('Passing grade must be a number')
+  body('passing_grade').optional().isNumeric().withMessage('Passing grade must be a number'),
+  body('courseId').isString().withMessage('Course ID must be a string')
 ]
 
 export const updateQuizValidator = [

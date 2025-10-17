@@ -1,17 +1,21 @@
 import adminRouter from './admin.route'
 import categoryRouter from './category.route'
+import certificateRouter from './certificate.route'
 import chapterRouter from './chapter.route'
 import commentRouter from './comment.route'
+import conversationRouter from './conversation.route'
 import couponRouter from './coupon.route'
 import courseRouter from './course.route'
 import enrollmentRouter from './enrollment.route'
 import favoriteCourseRouter from './favoriteCourse.route'
 import lessonRouter from './lesson.route'
+import messageRouter from './message.route'
 import notificationRouter from './notification.route'
 import orderRouter from './order.route'
 import progressRouter from './progress.route'
 import questionRouter from './question.route'
 import quizRouter from './quiz.route'
+import quizSubmissionRouter from './quizSubmission.route'
 import ratingRouter from './rating.route'
 import teacherRouter from './teacher.route'
 import usersRouter from './user.route'
@@ -34,4 +38,8 @@ export const indexRoutes = (app: any) => {
   app.use('/api/notifications', notificationRouter)
   app.use('/api/quiz', quizRouter)
   app.use('/api/questions', questionRouter)
+  app.use('/api/submissions', quizSubmissionRouter)
+  app.use('/api/certificates', certificateRouter)
+  app.use('/api/conversations', conversationRouter)
+  app.use('/api/messages', messageRouter)
 }

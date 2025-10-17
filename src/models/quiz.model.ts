@@ -1,6 +1,7 @@
 import { model, Schema, Document } from 'mongoose'
 
 export interface Quiz extends Document {
+  _id: Schema.Types.ObjectId
   title: string
   duration?: number
   passing_grade?: number
@@ -8,6 +9,7 @@ export interface Quiz extends Document {
   questions: Schema.Types.ObjectId[]
   lesson: Schema.Types.ObjectId
   created_by: Schema.Types.ObjectId
+  courseId: Schema.Types.ObjectId
 }
 
 const QuizSchema = new Schema<Quiz>(
@@ -39,6 +41,11 @@ const QuizSchema = new Schema<Quiz>(
     created_by: {
       type: Schema.Types.ObjectId,
       ref: 'User',
+      required: true
+    },
+    courseId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Course',
       required: true
     }
   },
