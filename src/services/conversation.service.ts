@@ -68,17 +68,21 @@ export const createConversationService = async ({
 }
 
 export const getUserConversationsService = async ({ userId }: { userId: string }) => {
-  const conversations = await ConversationModel.find({
-    participants: userId
-  })
-    .populate('participants', 'name avatar role')
+  const conversations = await ConversationModel.find({ participants: userId })
+    .populate<{ participants: { username: string; avatar: string }[] }>('participants', 'username avatar')
     .populate('lastMessage')
-    .sort({ updatedAt: -1 })
+    .lean()
 
-  return {
-    success: true,
-    statusCode: 200,
-    message: 'Fetched user conversations successfully',
-    data: conversations
-  }
+  const result = conversations.map((conv) => {
+    if (conv.isGroup) return conv
+
+    const otherUser = conv.participants.find((p: any) => p._id.toString() !== userId)
+    return {
+      ...conv,
+      displayName: otherUser ? otherUser.username : 'Unknown User',
+      avatar: otherUser?.avatar
+    }
+  })
+
+  return { success: true, data: result, message: 'Conversations fetched successfully', statusCode: 200 }
 }

@@ -6,7 +6,7 @@ import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const conversationRouter = express.Router()
 // create or get conversation : POST /api/conversations
-conversationRouter.post('/', verifyAccessToken, handleValidationErrors, createConversationController)
+conversationRouter.post('/', verifyAccessToken, createConversationController)
 
 // get user conversations : GET /api/conversations/:userId
 conversationRouter.get('/', verifyAccessToken, getUserConversationsController)

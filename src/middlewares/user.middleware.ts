@@ -182,3 +182,10 @@ export const userIdValidator = [
     .custom((value) => mongoose.Types.ObjectId.isValid(value))
     .withMessage('Invalid User ID')
 ]
+export const refreshTokenValidator = [
+  body('refreshToken')
+    .notEmpty()
+    .withMessage('Refresh token is required')
+    .isString()
+    .withMessage('Refresh token must be a string')
+]

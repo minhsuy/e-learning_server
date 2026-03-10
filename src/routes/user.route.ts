@@ -3,6 +3,7 @@ import {
   changePasswordController,
   finalRegisterController,
   forgotPasswordController,
+  getAccessTokenController,
   getListTeachersController,
   getMeController,
   getUserDetailController,
@@ -19,12 +20,13 @@ import {
   forgotPasswordValidator,
   listTeachersValidator,
   loginValidator,
+  refreshTokenValidator,
   registerValidator,
   resetPasswordValidator,
   updateMeValidator
 } from '~/middlewares/user.middleware'
 import { handleValidationErrors } from '~/middlewares/validate'
-import { verifyAccessToken } from '~/middlewares/verifyToken'
+import { verifyAccessToken, verifyRefreshToken } from '~/middlewares/verifyToken'
 
 const usersRouter = express.Router()
 
@@ -72,4 +74,6 @@ usersRouter.get('/profile/:id', getUserDetailValidator, handleValidationErrors, 
 // Get list teacher GET /api/users/teachers
 
 usersRouter.get('/teachers', listTeachersValidator, handleValidationErrors, getListTeachersController)
+// get access_token
+usersRouter.post('/access_token', verifyRefreshToken, getAccessTokenController)
 export default usersRouter

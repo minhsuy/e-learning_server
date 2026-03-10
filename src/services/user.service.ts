@@ -260,3 +260,17 @@ export const getListTeachersService = async (params: any) => {
     }
   }
 }
+
+// get acess token
+
+export const getAccessTokenService = async ({ userId }: { userId: string }) => {
+  const user = await UserModel.findById(userId)
+  if (!user) {
+    return { success: false, message: 'User not found' }
+  }
+  const access_token = generateAccessToken({ userId: user._id.toString(), role: user.role })
+  return {
+    success: true,
+    access_token
+  }
+}

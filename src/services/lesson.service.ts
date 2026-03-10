@@ -160,7 +160,7 @@ export const deleteLessonService = async ({
 // get lesson by chapter
 export const getLessonsByChapterService = async (chapterId: string) => {
   const lessons = await LessonModel.find({ chapter: chapterId })
-    .select('_id title slug order duration type isDemo createdAt')
+    .select('_id title slug order duration type isDemo videoUrl content createdAt')
     .sort({ order: 1 })
 
   if (!lessons || lessons.length === 0) {

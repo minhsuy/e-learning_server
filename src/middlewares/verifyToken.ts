@@ -16,25 +16,61 @@ export const verifyToken = async ({ token, privateKey, options }: VerifyTokenPar
 export const verifyAccessToken = asyncHandler(async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   const authHeader = req.headers.authorization
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Access Token is missing!' })
+    return res.status(401).json({
+      success: false,
+      error: 'Access Token is missing!'
+    })
   }
 
   const token = authHeader.split(' ')[1]
 
-  const decoded = await verifyToken({
-    token,
-    privateKey: process.env.JWT_SECRECT_ACCESS_TOKEN as string
-  })
-  req.user = decoded
-  next()
+  try {
+    const decoded = await verifyToken({
+      token,
+      privateKey: process.env.JWT_SECRECT_ACCESS_TOKEN as string
+    })
+
+    req.user = decoded
+    next()
+  } catch (err: any) {
+    return res.status(401).json({
+      success: false,
+      error: err.name === 'TokenExpiredError' ? 'jwt expired' : 'invalid token'
+    })
+  }
 })
-export const verifyRefreshToken = asyncHandler(async (req, res, next) => {
-  const token = req.cookies
-  if (!token.refreshToken) throw new Error('Refresh token is missing ')
-  const decoded = await verifyToken({
-    token: token.refreshToken,
-    privateKey: process.env.JWT_SECRECT_REFRESH_TOKEN as string
-  })
-  req.user = decoded
-  next()
-})
+
+export const verifyRefreshToken = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    const { refresh_token } = req.body
+
+    if (!refresh_token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Refresh token is missing'
+      })
+    }
+
+    try {
+      const decoded = await verifyToken({
+        token: refresh_token,
+        privateKey: process.env.JWT_SECRECT_REFRESH_TOKEN as string
+      })
+
+      if (decoded.exp * 1000 < Date.now()) {
+        return res.status(401).json({
+          success: false,
+          message: 'Refresh token expired'
+        })
+      }
+
+      req.user = decoded
+      next()
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid refresh token'
+      })
+    }
+  }
+)

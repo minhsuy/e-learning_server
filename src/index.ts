@@ -12,9 +12,16 @@ const app = express()
 connectDB()
 
 const port = process.env.PORT
+
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true)
+      if (origin.includes('localhost') || origin.includes('192.168.')) {
+        return callback(null, true)
+      }
+      callback(new Error('Not allowed by CORS'))
+    },
     credentials: true
   })
 )

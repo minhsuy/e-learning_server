@@ -6,6 +6,7 @@ import dotenv from 'dotenv'
 import {
   changePasswordService,
   forgotPasswordService,
+  getAccessTokenService,
   getListTeachersService,
   getMeService,
   loginUserService,
@@ -46,7 +47,7 @@ export const loginController = asyncHandler(async (req: Request, res: Response):
   const result = await loginUserService({ email, password })
 
   if (!result.success) {
-    return res.status(400).json({
+    return res.status(401).json({
       success: false,
       message: result.message
     })
@@ -169,5 +170,12 @@ export const getUserDetailController = asyncHandler(async (req: Request, res: Re
 
 export const getListTeachersController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const result = await getListTeachersService(req.query)
+  return res.status(200).json(result)
+})
+
+// get access token
+export const getAccessTokenController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const { userId } = req.user as { userId: string }
+  const result = await getAccessTokenService({ userId })
   return res.status(200).json(result)
 })

@@ -9,6 +9,11 @@ export const initSocket = (server: any) => {
   })
 
   io.on('connection', (socket) => {
+    const userId = socket.handshake.query.userId
+    if (userId) {
+      socket.join(String(userId))
+      console.log(`📡 User ${userId} joined personal room`)
+    }
     console.log('A user connected', socket.id)
     socket.on('join', (room) => {
       socket.join(`${room}`)
@@ -45,6 +50,31 @@ export const initSocket = (server: any) => {
         socket.emit('errorMessage', result.message)
       }
     })
+    socket.on('callUser', ({ receiverId, callerId }) => {
+      console.log(`☎️ Call from ${callerId} to ${receiverId}`)
+      io.to(String(receiverId)).emit('incomingCall', { callerId })
+    })
+
+    socket.on('answerCall', ({ receiverId }) => {
+      console.log(`✅ Call accepted by ${receiverId}`)
+      io.to(String(receiverId)).emit('callAccepted')
+    })
+
+    // WebRTC Offer
+    socket.on('webrtc-offer', ({ receiverId, offer }) => {
+      io.to(String(receiverId)).emit('webrtc-offer', { offer })
+    })
+
+    // WebRTC Answer
+    socket.on('webrtc-answer', ({ receiverId, answer }) => {
+      io.to(String(receiverId)).emit('webrtc-answer', { answer })
+    })
+
+    // ICE candidates exchange
+    socket.on('webrtc-ice-candidate', ({ receiverId, candidate }) => {
+      io.to(String(receiverId)).emit('webrtc-ice-candidate', { candidate })
+    })
+
     socket.on('disconnect', () => {
       console.log('A user disconnected', socket.id)
     })

@@ -31,7 +31,7 @@ export const createMessageService = async ({
 
 export const getMessagesByConversationService = async (conversationId: string): Promise<ServiceResponse> => {
   const messages = await MessageModel.find({ conversation: conversationId })
-    .populate('sender', 'name avatar')
+    .populate('sender', 'username avatar')
     .sort({ createdAt: 1 })
 
   return { success: true, statusCode: 200, message: 'Messages fetched successfully', data: messages }
