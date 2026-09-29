@@ -1,24 +1,62 @@
 import dotenv from 'dotenv'
 
 dotenv.config()
-export const welcomeEmail = (username: string, verificationCode: string) => {
+export const welcomeEmail = (username: string, otp: string) => {
   return {
-    subject: 'Chào mừng bạn đến với E-Learning App 🎉',
-    text: `Xin chào ${username}, cảm ơn bạn đã đăng ký E-Learning App! Vui lòng xác thực email để bắt đầu.`,
+    subject: 'Mã xác thực tài khoản E-Learning của bạn 🔐',
+    text: `Xin chào ${username}, mã OTP xác thực tài khoản của bạn là: ${otp}. Mã có hiệu lực trong 10 phút.`,
     html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; color: #333;">
-        <h2 style="color: #4CAF50;">Xin chào, ${username} 👋</h2>
-        <p>Cảm ơn bạn đã đăng ký <b>E-Learning App</b>. Chúng tôi rất vui khi có bạn đồng hành trên hành trình học tập 🚀</p>
-        <p>Vui lòng nhấn vào nút bên dưới để xác thực email và kích hoạt tài khoản của bạn:</p>
-        <div style="margin: 20px 0;">
-          <a  href=${process.env.URL_SERVER}/api/users/finalregister/${verificationCode}
-             style="background: #4CAF50; color: white; padding: 12px 24px; 
-                    text-decoration: none; border-radius: 5px; display: inline-block;">
-            Xác thực Email
-          </a>
+      <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+                  padding: 40px 20px; color: #1f2937;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff;
+                    border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                    overflow: hidden; border: 1px solid rgba(0,0,0,0.05);">
+
+          <!-- Header -->
+          <div style="background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+                      padding: 30px 20px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;">
+              Nền tảng E-Learning
+            </h1>
+            <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">
+              Học tập thông minh, tương lai rạng ngời
+            </p>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 40px 30px; text-align: center;">
+            <h2 style="margin: 0 0 8px; font-size: 22px; font-weight: 600; color: #111827;">
+              Xin chào, ${username} 👋
+            </h2>
+            <p style="font-size: 16px; color: #4b5563; line-height: 1.7; margin-bottom: 28px;">
+              Cảm ơn bạn đã đăng ký <b>E-Learning App</b>.<br/>
+              Vui lòng dùng mã OTP dưới đây để xác thực tài khoản:
+            </p>
+
+            <!-- OTP Box -->
+            <div style="display: inline-block; background: #f3f4f6; border: 2px dashed #6366f1;
+                        border-radius: 12px; padding: 20px 40px; margin: 0 auto 28px;">
+              <span style="font-size: 40px; font-weight: 800; letter-spacing: 12px;
+                           color: #4f46e5; font-family: 'Courier New', monospace;">
+                ${otp}
+              </span>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+              Mã OTP có hiệu lực trong <strong>10 phút</strong>.<br/>
+              Nếu bạn không tạo tài khoản, vui lòng bỏ qua email này.
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="background: #f8fafc; padding: 20px; text-align: center;
+                      font-size: 13px; color: #6b7280; border-top: 1px solid #e5e7eb;">
+            <p style="margin: 0;">
+              © ${new Date().getFullYear()} Nền tảng E-Learning. Mọi quyền được bảo lưu.
+            </p>
+          </div>
         </div>
-        <p>Nếu bạn không tạo tài khoản trên <b>E-Learning App</b>, vui lòng bỏ qua email này.</p>
-        <p style="margin-top: 30px;">Trân trọng,<br/>Đội ngũ E-Learning App 📚</p>
       </div>
     `
   }

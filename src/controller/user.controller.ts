@@ -14,7 +14,7 @@ import {
   registerUserService,
   resetPasswordService,
   updateMeService,
-  verifyUserService
+  verifyOtpService
 } from '~/services/user.service'
 import { getUserDetailService } from '~/services/admin.service'
 
@@ -29,15 +29,13 @@ export const registerController = asyncHandler(async (req: Request, res: Respons
     .json({ success: true, message: 'Đăng ký tài khoản thành công . Vui lòng check email để xác thực !' })
 })
 
-export const finalRegisterController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { token } = req.params
+// Verify OTP POST /api/users/verify-otp
+export const verifyOtpController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const { email, otp } = req.body
 
-  await verifyUserService(token)
+  const result = await verifyOtpService({ email, otp })
 
-  return res.status(200).json({
-    success: true,
-    message: 'Xác thực email thành công!'
-  })
+  return res.status(200).json(result)
 })
 
 //  Login user
@@ -159,7 +157,7 @@ export const changePasswordController = asyncHandler(async (req: Request, res: R
 // get user detail
 export const getUserDetailController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { id } = req.params
-  const result = await getUserDetailService({ id })
+  const result = await getUserDetailService({ id } as any)
   if (!result.success) {
     return res.status(404).json(result)
   }
@@ -176,6 +174,10 @@ export const getListTeachersController = asyncHandler(async (req: Request, res: 
 // get access token
 export const getAccessTokenController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { userId } = req.user as { userId: string }
-  const result = await getAccessTokenService({ userId })
+  const { refresh_token } = req.body
+  const result = await getAccessTokenService({ userId, refresh_token })
+  if (!result.success) {
+    return res.status(401).json(result)
+  }
   return res.status(200).json(result)
 })

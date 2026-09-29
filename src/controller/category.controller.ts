@@ -19,7 +19,7 @@ export const createCategoryController = asyncHandler(async (req: Request, res: R
 
 export const deleteCategoryController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { id } = req.params
-  const result = await deleteCategoryService(id)
+  const result = await deleteCategoryService(id as string)
   return res.status(result.success ? 200 : (result.statusCode ?? 400)).json(result)
 })
 
@@ -39,6 +39,6 @@ export const getCategoriesController = asyncHandler(async (req: Request, res: Re
 // category detail
 export const getCategoryDetailController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { slug } = req.params
-  const result = await getCategoryDetailService(slug)
+  const result = await getCategoryDetailService(slug as string)
   return res.status(result.success ? 200 : (result.statusCode ?? 400)).json(result)
 })

@@ -1,5 +1,4 @@
 import { body, param, query } from 'express-validator'
-import jwt, { TokenExpiredError } from 'jsonwebtoken'
 import UserModel from '~/models/user.model'
 import { UserRole } from '~/types/enum'
 import dotenv from 'dotenv'
@@ -50,28 +49,20 @@ export const registerValidator = [
   body('role').optional().isIn(Object.values(UserRole)).withMessage('Invalid role')
 ]
 
-export const finalRegisterValidator = [
-  param('token')
+export const verifyOtpValidator = [
+  body('email')
     .notEmpty()
-    .withMessage('Token is required')
-    .isString()
-    .withMessage('Token must be a string')
-    .custom(async (token) => {
-      const secret = process.env.JWT_SECRET_VERIFIED_EMAIL as string
-      try {
-        jwt.verify(token, secret)
-      } catch (err) {
-        if (err instanceof TokenExpiredError) {
-          const decoded = jwt.decode(token) as { userId?: string }
-          if (decoded?.userId) {
-            await UserModel.findByIdAndDelete(decoded.userId)
-          }
-          throw new Error('Token expired, user deleted')
-        }
-        throw new Error('Invalid token')
-      }
-      return true
-    })
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Invalid email format'),
+
+  body('otp')
+    .notEmpty()
+    .withMessage('Mã OTP là bắt buộc')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('Mã OTP phải đúng 6 số')
+    .isNumeric()
+    .withMessage('Mã OTP chỉ chứa số')
 ]
 
 export const loginValidator = [
@@ -85,7 +76,7 @@ export const loginValidator = [
       if (!user) {
         throw new Error('Email không tồn tại')
       }
-      if (user.isVerified !== '') {
+      if (!user.isVerified) {
         throw new Error('Vui lòng xác thực email trước khi đăng nhập')
       }
       return true

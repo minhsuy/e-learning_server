@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import {
   changePasswordController,
-  finalRegisterController,
+  verifyOtpController,
   forgotPasswordController,
   getAccessTokenController,
   getListTeachersController,
@@ -16,7 +16,7 @@ import {
 import { getUserDetailValidator } from '~/middlewares/admin.middleware'
 import {
   changePasswordValidator,
-  finalRegisterValidator,
+  verifyOtpValidator,
   forgotPasswordValidator,
   listTeachersValidator,
   loginValidator,
@@ -33,8 +33,8 @@ const usersRouter = express.Router()
 // Register POST /api/users/register
 usersRouter.post('/register', registerValidator, handleValidationErrors, registerController)
 
-// Final Register GET /api/users/finalregister
-usersRouter.get('/finalregister/:token', finalRegisterValidator, finalRegisterController)
+// Verify OTP POST /api/users/verify-otp
+usersRouter.post('/verify-otp', verifyOtpValidator, handleValidationErrors, verifyOtpController)
 
 // Login POST /api/users/login
 usersRouter.post('/login', loginValidator, handleValidationErrors, loginController)

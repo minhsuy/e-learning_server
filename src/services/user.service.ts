@@ -4,7 +4,7 @@ import UserModel from '~/models/user.model'
 import bcrypt from 'bcryptjs'
 import { resetPasswordEmail, welcomeEmail } from '~/styles/sendEmailTemplate'
 import { sendEmail } from '~/utils/nodeMailer'
-import { generateAccessToken, generateRefreshToken, generateVerificationToken } from '~/middlewares/generateToken'
+import { generateAccessToken, generateRefreshToken } from '~/middlewares/generateToken'
 import { ServiceResponse, UpdateMeParams } from '~/types/type'
 import dotenv from 'dotenv'
 import { hashToken } from '~/utils/ultis'
@@ -24,7 +24,10 @@ export const registerUserService = async (payload: {
 
   const hashedPassword = await bcrypt.hash(password, 10)
 
-  const verificationToken = generateVerificationToken(email)
+  // Sinh OTP 6 số ngẫu nhiên
+  const otp = Math.floor(100000 + Math.random() * 900000).toString()
+  const hashedOtp = hashToken(otp)
+  const otpExpires = new Date(Date.now() + 1000 * 60 * 10) // hết hạn sau 10 phút
 
   const newUser = new UserModel({
     username,
@@ -33,34 +36,50 @@ export const registerUserService = async (payload: {
     phone,
     bio,
     role,
-    isVerified: verificationToken
+    isVerified: false,
+    otp_code: hashedOtp,
+    otp_expires: otpExpires
   })
 
   await newUser.save()
 
-  const { subject, text, html } = welcomeEmail(username, verificationToken)
+  const { subject, text, html } = welcomeEmail(username, otp)
   await sendEmail({ to: email, subject, text, html })
 
   return newUser
 }
 
-export const verifyUserService = async (token: string) => {
-  const secret = process.env.JWT_SECRET_VERIFIED_EMAIL as string
-  const decoded = jwt.verify(token, secret) as { userId: string }
-
-  const user = await UserModel.findOne({ email: decoded.userId })
+export const verifyOtpService = async ({ email, otp }: { email: string; otp: string }) => {
+  const user = await UserModel.findOne({ email })
   if (!user) {
     throw new Error('Người dùng không tồn tại')
   }
 
-  if (user.isVerified !== token) {
-    throw new Error('Token không khớp')
+  if (user.isVerified) {
+    return { success: true, message: 'Tài khoản đã được xác thực trước đó' }
   }
 
-  user.isVerified = ''
+  if (!user.otp_code || !user.otp_expires) {
+    throw new Error('OTP không tồn tại')
+  }
+
+  if (user.otp_expires < new Date()) {
+    // Xóa user khi OTP hết hạn (tương đương logic cũ)
+    await UserModel.findByIdAndDelete(user._id)
+    throw new Error('OTP đã hết hạn, vui lòng đăng ký lại')
+  }
+
+  const hashedInput = hashToken(otp)
+  if (hashedInput !== user.otp_code) {
+    throw new Error('Mã OTP không đúng')
+  }
+
+  user.isVerified = true
+  user.otp_code = undefined
+  user.otp_expires = undefined
   await user.save()
 
-  return user
+  return { success: true, message: 'Xác thực email thành công!' }
 }
 
 export const loginUserService = async (payload: { email: string; password: string }): Promise<ServiceResponse> => {
@@ -79,7 +98,8 @@ export const loginUserService = async (payload: { email: string; password: strin
   const access_token = generateAccessToken({ userId: user._id.toString(), role: user.role })
   const refresh_token = generateRefreshToken({ userId: user._id.toString() })
 
-  user.refresh_token = refresh_token
+  // Hash token trước khi lưu DB — client vẫn nhận raw token
+  user.refresh_token = hashToken(refresh_token)
   await user.save()
 
   return { success: true, access_token, refresh_token, message: 'Login successfully !' }
@@ -92,7 +112,7 @@ export const getMeService = async ({ userId }: { userId: string }): Promise<Serv
       message: 'User not found !'
     }
   }
-  const user = await UserModel.findById(userId).select('-password -refresh_token -isVerified')
+  const user = await UserModel.findById(userId).select('-password -refresh_token -isVerified -otp_code -otp_expires')
 
   if (!user) {
     return { success: false, message: 'User not found' }
@@ -263,11 +283,18 @@ export const getListTeachersService = async (params: any) => {
 
 // get acess token
 
-export const getAccessTokenService = async ({ userId }: { userId: string }) => {
+export const getAccessTokenService = async ({ userId, refresh_token }: { userId: string; refresh_token: string }) => {
   const user = await UserModel.findById(userId)
   if (!user) {
     return { success: false, message: 'User not found' }
   }
+
+  // So sánh hashed token trong DB với hash của raw token từ client
+  const hashedIncoming = hashToken(refresh_token)
+  if (!user.refresh_token || user.refresh_token !== hashedIncoming) {
+    return { success: false, message: 'Refresh token không hợp lệ hoặc đã bị thu hồi' }
+  }
+
   const access_token = generateAccessToken({ userId: user._id.toString(), role: user.role })
   return {
     success: true,

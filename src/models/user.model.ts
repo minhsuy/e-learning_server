@@ -3,7 +3,6 @@ import { UserRole, UserStatus } from '~/types/enum'
 import { SocialLinks } from '~/types/type'
 
 export interface User extends Document {
-  _id: string
   username: string
   email: string
   password: string
@@ -15,7 +14,9 @@ export interface User extends Document {
   phone: string
   bio: string
   socialLinks?: SocialLinks
-  isVerified: string
+  isVerified: boolean
+  otp_code?: string
+  otp_expires?: Date
   refresh_token?: string
   reset_password_token?: string
   reset_password_expires?: Date
@@ -67,7 +68,14 @@ const userSchema = new Schema<User>(
       github: { type: String, default: '' }
     },
     isVerified: {
+      type: Boolean,
+      default: false
+    },
+    otp_code: {
       type: String
+    },
+    otp_expires: {
+      type: Date
     },
     refresh_token: {
       type: String

@@ -52,6 +52,7 @@ export const verifyRefreshToken = asyncHandler(
     }
 
     try {
+      // Bước 1: Xác minh chữ ký JWT và thời hạn token
       const decoded = await verifyToken({
         token: refresh_token,
         privateKey: process.env.JWT_SECRECT_REFRESH_TOKEN as string
@@ -64,6 +65,9 @@ export const verifyRefreshToken = asyncHandler(
         })
       }
 
+      // Bước 2: Gắn thông tin decoded vào req.user
+      // raw refresh_token vẫn nằm trong req.body để service layer
+      // có thể hash và đối chiếu với DB (bảo vệ khỏi DB leak)
       req.user = decoded
       next()
     } catch (err) {
