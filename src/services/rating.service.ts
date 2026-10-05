@@ -1,10 +1,28 @@
-import RatingModel from '../models/rating.model'
-import CourseModel from '../models/course.model'
-import UserModel from '../models/user.model'
-import { FilterQuery, Types } from 'mongoose'
-import { ServiceResponse } from '~/types/type'
-import { ENotificationType, ERatingStatus, UserRole } from '~/types/enum'
+import { ENotificationType, ERatingStatus, Prisma, UserRole } from '@prisma/client'
+import { prisma } from '~/config/prisma'
+import { findCourseById } from '~/repositories/course.repository'
+import { findUserById } from '~/repositories/user.repository'
+import { findEnrollmentByUserAndCourse } from '~/repositories/enrollment.repository'
+import {
+  countRatingsWithFilter,
+  createRating,
+  deleteRating,
+  findRatingById,
+  findRatingByUserAndCourse,
+  findRatingsByCourseId,
+  findRatingsWithFilter,
+  updateRatingStatus
+} from '~/repositories/rating.repository'
 import { pushNotificationService } from './notification.service'
+import { ServiceResponse } from '~/types/type'
+import { withCompatId } from '~/utils/uuid'
+
+/**
+ * TMDEMY — RATING SERVICE
+ * 
+ * Manages course ratings and reviews for students, instructors, and admins.
+ * Single source of truth: PostgreSQL via Functional Repositories.
+ */
 
 export const createNewRatingService = async ({
   courseId,
@@ -17,77 +35,109 @@ export const createNewRatingService = async ({
   content: string
   userId: string
 }): Promise<ServiceResponse> => {
-  const course = await CourseModel.findById(courseId)
+  // 1. Verify Course exists in PostgreSQL
+  const course = await findCourseById(courseId)
   if (!course) {
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
-  const user = await UserModel.findById(userId).select('courses username')
+  // 2. Verify User exists in PostgreSQL
+  const user = await findUserById(userId)
   if (!user) {
     return { success: false, statusCode: 404, message: 'User not found' }
   }
 
-  const isEnrolled = user.courses.some((c) => c.toString() === courseId)
-  if (!isEnrolled) {
+  // 3. Verify Enrollment in PostgreSQL (replaces MongoDB user.courses)
+  const enrollment = await findEnrollmentByUserAndCourse(userId, courseId)
+  if (!enrollment) {
     return { success: false, statusCode: 403, message: 'You are not enrolled in this course' }
   }
 
-  const existingRating = await RatingModel.findOne({ user: userId, course: courseId })
+  // 4. Verify user has not already rated this course
+  const existingRating = await findRatingByUserAndCourse(userId, courseId)
   if (existingRating) {
     return { success: false, statusCode: 400, message: 'You have already rated this course' }
   }
 
-  const rating = await RatingModel.create({
-    rate,
-    content,
-    user: new Types.ObjectId(userId),
-    course: new Types.ObjectId(courseId),
-    status: ERatingStatus.ACTIVE
-  })
-  course.rating.push(rating._id)
-  await course.save()
-  if (course.author.toString() !== userId) {
-    await pushNotificationService({
-      senderId: userId,
-      receiverId: course.author.toString(),
-      type: ENotificationType.RATING,
-      message: `${user.username} vừa đánh giá khóa học "${course.title}" với ${rate} sao: "${content}"`,
-      relatedId: rating._id.toString()
+  // 5. Create Rating in PostgreSQL
+  try {
+    const rating = await createRating({
+      rate,
+      content,
+      userId,
+      courseId,
+      status: ERatingStatus.ACTIVE
     })
-  }
-  return {
-    success: true,
-    message: 'Rating created successfully',
-    data: rating
+
+    // 6. Send notification to Course author (non-blocking)
+    if (course.authorId !== userId) {
+      try {
+        await pushNotificationService({
+          senderId: userId,
+          receiverId: course.authorId,
+          type: ENotificationType.RATING,
+          message: `${user.username} vừa đánh giá khóa học "${course.title}" với ${rate} sao: "${content}"`,
+          relatedId: rating.id
+        })
+      } catch (notifErr) {
+        // Notification failure must not fail the rating creation
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Rating created successfully',
+      data: withCompatId(rating)
+    }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { success: false, statusCode: 400, message: 'You have already rated this course' }
+    }
+    throw error
   }
 }
 
-// get course rating
 export const getCourseRatingsService = async (courseId: string): Promise<ServiceResponse> => {
-  const course = await CourseModel.findById(courseId)
+  const course = await findCourseById(courseId)
   if (!course) {
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
-  const ratings = await RatingModel.find({ course: courseId, status: ERatingStatus.ACTIVE })
-    .select('rate content user')
-    .populate('user', 'username avatar')
-    .sort({ createdAt: -1 })
+  const ratings = await findRatingsByCourseId(courseId, ERatingStatus.ACTIVE)
 
   const totalRatings = ratings.length
-  const averageRating = totalRatings === 0 ? 0 : ratings.reduce((sum, r) => sum + r.rate, 0) / totalRatings
+  const averageRating =
+    totalRatings === 0
+      ? 0
+      : Math.round((ratings.reduce((sum, r) => sum + r.rate, 0) / totalRatings) * 100) / 100
+
+  const formattedRatings = ratings.map((r) => ({
+    _id: r.id,
+    id: r.id,
+    rate: r.rate,
+    content: r.content,
+    createdAt: r.createdAt,
+    user: r.user
+      ? {
+          _id: r.user.id,
+          id: r.user.id,
+          username: r.user.username,
+          avatar: r.user.avatar
+        }
+      : null
+  }))
 
   return {
     success: true,
     message: 'Fetched course ratings successfully',
     data: {
-      averageRating: Number(averageRating.toFixed(2)),
+      averageRating,
       totalRatings,
-      ratings
+      ratings: formattedRatings
     }
   }
 }
-// manage rating for admin or teacher
+
 export const getRatingsForAdminOrTeacherService = async ({
   courseId,
   status,
@@ -103,46 +153,56 @@ export const getRatingsForAdminOrTeacherService = async ({
   userId: string
   role: string
 }): Promise<ServiceResponse> => {
-  const skip = (page - 1) * limit
-  const filter: FilterQuery<typeof RatingModel> = {}
+  const parsedStatus = status ? (status.toUpperCase() as ERatingStatus) : undefined
+  let targetCourseIds: string[] | undefined
 
-  if (status) filter.status = status
   if (role === UserRole.TEACHER) {
-    const teacherCourses = await CourseModel.find({ author: new Types.ObjectId(userId) }).select('_id')
-    const teacherCourseIds = teacherCourses.map((c) => c._id.toString())
+    const teacherCourses = await prisma.course.findMany({
+      where: { authorId: userId },
+      select: { id: true }
+    })
+    const teacherCourseIdList = teacherCourses.map((c) => c.id)
 
     if (courseId) {
-      if (!teacherCourseIds.includes(courseId)) {
+      if (!teacherCourseIdList.includes(courseId)) {
         return { success: false, statusCode: 403, message: 'You are not allowed to view ratings of this course' }
       }
-      filter.course = new Types.ObjectId(courseId)
+      targetCourseIds = [courseId]
     } else {
-      filter.course = { $in: teacherCourseIds }
+      targetCourseIds = teacherCourseIdList
     }
-  }
-  if (role === UserRole.ADMIN && courseId) {
-    const courseExists = await CourseModel.findById(courseId)
+  } else if (role === UserRole.ADMIN && courseId) {
+    const courseExists = await findCourseById(courseId)
     if (!courseExists) {
       return { success: false, statusCode: 404, message: 'Course not found' }
     }
-    filter.course = new Types.ObjectId(courseId)
+    targetCourseIds = [courseId]
   }
 
   const [ratings, total] = await Promise.all([
-    RatingModel.find(filter)
-      .populate('user', 'username avatar')
-      .populate('course', 'title slug')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit),
-    RatingModel.countDocuments(filter)
+    findRatingsWithFilter({
+      courseIds: targetCourseIds,
+      status: parsedStatus,
+      page,
+      limit
+    }),
+    countRatingsWithFilter({
+      courseIds: targetCourseIds,
+      status: parsedStatus
+    })
   ])
+
+  const formattedRatings = ratings.map((r) => ({
+    ...withCompatId(r),
+    user: r.user ? withCompatId(r.user) : null,
+    course: r.course ? withCompatId(r.course) : null
+  }))
 
   return {
     success: true,
     message: 'Fetched ratings successfully',
     data: {
-      ratings,
+      ratings: formattedRatings,
       pagination: {
         page,
         limit,
@@ -152,7 +212,7 @@ export const getRatingsForAdminOrTeacherService = async ({
     }
   }
 }
-// delete rating
+
 export const deleteRatingService = async ({
   ratingId,
   userId,
@@ -162,14 +222,13 @@ export const deleteRatingService = async ({
   userId: string
   role: string
 }): Promise<ServiceResponse> => {
-  const rating = await RatingModel.findById(ratingId)
+  const rating = await findRatingById(ratingId)
   if (!rating) {
     return { success: false, statusCode: 404, message: 'Rating not found' }
   }
 
   if (role === UserRole.TEACHER) {
-    const course = await CourseModel.findById(rating.course)
-    if (!course || course.author.toString() !== userId) {
+    if (rating.course?.authorId !== userId) {
       return {
         success: false,
         statusCode: 403,
@@ -178,16 +237,14 @@ export const deleteRatingService = async ({
     }
   }
 
-  await RatingModel.findByIdAndDelete(ratingId)
-
-  await CourseModel.findByIdAndUpdate(rating.course, { $pull: { rating: rating._id } })
+  await deleteRating(ratingId)
 
   return {
     success: true,
     message: 'Rating deleted successfully'
   }
 }
-// update rating by admin or teacher
+
 export const updateRatingStatusService = async ({
   ratingId,
   status,
@@ -199,14 +256,13 @@ export const updateRatingStatusService = async ({
   userId: string
   role: string
 }): Promise<ServiceResponse> => {
-  const rating = await RatingModel.findById(ratingId)
+  const rating = await findRatingById(ratingId)
   if (!rating) {
     return { success: false, statusCode: 404, message: 'Rating not found' }
   }
 
   if (role === UserRole.TEACHER) {
-    const course = await CourseModel.findById(rating.course)
-    if (!course || course.author.toString() !== userId) {
+    if (rating.course?.authorId !== userId) {
       return {
         success: false,
         statusCode: 403,
@@ -215,12 +271,11 @@ export const updateRatingStatusService = async ({
     }
   }
 
-  rating.status = status
-  await rating.save()
+  const updatedRating = await updateRatingStatus(ratingId, status)
 
   return {
     success: true,
     message: 'Rating status updated successfully',
-    data: rating
+    data: updatedRating ? withCompatId(updatedRating) : null
   }
 }

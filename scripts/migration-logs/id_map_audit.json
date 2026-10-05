@@ -1,0 +1,879 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "generatedAt": "2026-09-30T14:38:00.210Z",
+    "mode": "READ_ONLY_VALIDATION",
+    "mongoDatabase": "e-learning",
+    "totalRecordsMapped": 120,
+    "entityCounts": {
+      "users": 7,
+      "categories": 3,
+      "courses": 8,
+      "course_faqs": 8,
+      "chapters": 12,
+      "lessons": 7,
+      "quizzes": 3,
+      "questions": 5,
+      "question_options": 20,
+      "quiz_submissions": 2,
+      "quiz_submission_answers": 4,
+      "orders": 8,
+      "coupons": 2,
+      "coupon_courses": 2,
+      "enrollments": 5,
+      "progress": 4,
+      "certificates": 1,
+      "ratings": 1,
+      "favorite_courses": 2,
+      "comments": 8,
+      "comment_reactions": 1,
+      "conversations": 2,
+      "conversation_participants": 6,
+      "messages": 12,
+      "message_reads": 0,
+      "notifications": 28
+    }
+  },
+  "mappings": [
+    {
+      "sourceCollection": "users",
+      "sourceId": "68dcf8f9e3617ec76053b4d7",
+      "targetTable": "users",
+      "targetId": "c55de839-f059-519c-8820-b16aa17fb9c3",
+      "canonicalKey": "users:68dcf8f9e3617ec76053b4d7"
+    },
+    {
+      "sourceCollection": "users",
+      "sourceId": "68d3f7077891a37931bcde17",
+      "targetTable": "users",
+      "targetId": "13608f92-8acf-53e3-adcb-0d832e9cb1d4",
+      "canonicalKey": "users:68d3f7077891a37931bcde17"
+    },
+    {
+      "sourceCollection": "users",
+      "sourceId": "68cade1dc90d6a22b6820cbc",
+      "targetTable": "users",
+      "targetId": "8eb5b1cb-9b46-5ce8-b7c2-9d0d86c893e8",
+      "canonicalKey": "users:68cade1dc90d6a22b6820cbc"
+    },
+    {
+      "sourceCollection": "users",
+      "sourceId": "68cbdb3372b7cc923d7f4cd2",
+      "targetTable": "users",
+      "targetId": "773e6719-acb0-5750-b06d-7445812f40b3",
+      "canonicalKey": "users:68cbdb3372b7cc923d7f4cd2"
+    },
+    {
+      "sourceCollection": "users",
+      "sourceId": "68d37f121c7c07a175fd30f5",
+      "targetTable": "users",
+      "targetId": "6dd1ccd9-420b-5c6d-8322-75223e67e549",
+      "canonicalKey": "users:68d37f121c7c07a175fd30f5"
+    },
+    {
+      "sourceCollection": "users",
+      "sourceId": "68cbde2502a48312779b9252",
+      "targetTable": "users",
+      "targetId": "02e8e13a-dab2-5fb6-a14f-933ac125edca",
+      "canonicalKey": "users:68cbde2502a48312779b9252"
+    },
+    {
+      "sourceCollection": "users",
+      "sourceId": "68fd9ea4bd4da2646013d414",
+      "targetTable": "users",
+      "targetId": "6b760425-effa-5713-99ba-b296e6cf190d",
+      "canonicalKey": "users:68fd9ea4bd4da2646013d414"
+    },
+    {
+      "sourceCollection": "categories",
+      "sourceId": "66ff0aa7e3a4d8c1b8f02a9e",
+      "targetTable": "categories",
+      "targetId": "fc5d66a4-7468-5328-a6a9-16c3a9e49881",
+      "canonicalKey": "categories:66ff0aa7e3a4d8c1b8f02a9e"
+    },
+    {
+      "sourceCollection": "categories",
+      "sourceId": "650f9b1c2a1c9c4d5f123456",
+      "targetTable": "categories",
+      "targetId": "dddf433f-347b-5024-b70d-2398aaed3660",
+      "canonicalKey": "categories:650f9b1c2a1c9c4d5f123456"
+    },
+    {
+      "sourceCollection": "categories",
+      "sourceId": "68d6b6225de7c31f87236bb0",
+      "targetTable": "categories",
+      "targetId": "2ec199fc-a7e0-531e-b79d-14b479f74853",
+      "canonicalKey": "categories:68d6b6225de7c31f87236bb0"
+    },
+    {
+      "sourceCollection": "courses",
+      "sourceId": "68d3f862e710d52ff77262a7",
+      "targetTable": "courses",
+      "targetId": "88b09b74-a128-535c-a2ad-6e72e6f45652",
+      "canonicalKey": "courses:68d3f862e710d52ff77262a7"
+    },
+    {
+      "sourceCollection": "courses",
+      "sourceId": "68d3f7f6e710d52ff7726297",
+      "targetTable": "courses",
+      "targetId": "2d535d8f-0ac6-50a3-b86c-30fc54eeab8a",
+      "canonicalKey": "courses:68d3f7f6e710d52ff7726297"
+    },
+    {
+      "sourceCollection": "courses",
+      "sourceId": "68d62da7799f7ff4e7d3a73d",
+      "targetTable": "courses",
+      "targetId": "60b278f7-1793-5be8-96c6-c13980fe027f",
+      "canonicalKey": "courses:68d62da7799f7ff4e7d3a73d"
+    },
+    {
+      "sourceCollection": "courses",
+      "sourceId": "68d3f6a27891a37931bcde0e",
+      "targetTable": "courses",
+      "targetId": "bf71781d-be81-527f-b0d0-2b585d3bffcb",
+      "canonicalKey": "courses:68d3f6a27891a37931bcde0e"
+    },
+    {
+      "sourceCollection": "courses",
+      "sourceId": "68d3f7dbe710d52ff772628f",
+      "targetTable": "courses",
+      "targetId": "f0dde7bb-1bf6-5602-a489-cd324132c68a",
+      "canonicalKey": "courses:68d3f7dbe710d52ff772628f"
+    },
+    {
+      "sourceCollection": "courses",
+      "sourceId": "68d51b39f3189d72dc8e6bb7",
+      "targetTable": "courses",
+      "targetId": "81518947-e1f5-56f1-a296-93148b74a684",
+      "canonicalKey": "courses:68d51b39f3189d72dc8e6bb7"
+    },
+    {
+      "sourceCollection": "courses",
+      "sourceId": "68d3f7eae710d52ff7726293",
+      "targetTable": "courses",
+      "targetId": "eea23666-7af0-5ec9-80c0-f30c54ee5a26",
+      "canonicalKey": "courses:68d3f7eae710d52ff7726293"
+    },
+    {
+      "sourceCollection": "courses",
+      "sourceId": "68d636c624fab685a27c1729",
+      "targetTable": "courses",
+      "targetId": "8e6c5171-23d5-51dd-99b5-634769d84364",
+      "canonicalKey": "courses:68d636c624fab685a27c1729"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74b3e31feaebba6d2e313",
+      "targetTable": "chapters",
+      "targetId": "44408597-1975-5544-94a9-940bb1140c33",
+      "canonicalKey": "chapters:68d74b3e31feaebba6d2e313"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74f24c6ea726291d68d8b",
+      "targetTable": "chapters",
+      "targetId": "31a36620-ad74-5958-a3d7-57c7a892ab33",
+      "canonicalKey": "chapters:68d74f24c6ea726291d68d8b"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74e36c6ea726291d68d5c",
+      "targetTable": "chapters",
+      "targetId": "e62bd7d9-b430-54b6-beb8-9815f6abe42e",
+      "canonicalKey": "chapters:68d74e36c6ea726291d68d5c"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74e97c6ea726291d68d73",
+      "targetTable": "chapters",
+      "targetId": "c02c5770-b10c-513c-b9cf-3662a427de5f",
+      "canonicalKey": "chapters:68d74e97c6ea726291d68d73"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74f30c6ea726291d68d91",
+      "targetTable": "chapters",
+      "targetId": "cd075674-fac1-5957-a4df-e2852971d454",
+      "canonicalKey": "chapters:68d74f30c6ea726291d68d91"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74e45c6ea726291d68d62",
+      "targetTable": "chapters",
+      "targetId": "4bde47b0-39fc-5dce-b0c2-a9452ad19783",
+      "canonicalKey": "chapters:68d74e45c6ea726291d68d62"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74eecc6ea726291d68d7f",
+      "targetTable": "chapters",
+      "targetId": "aac5f26d-5458-5ea3-b007-cf407a14a824",
+      "canonicalKey": "chapters:68d74eecc6ea726291d68d7f"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74e52c6ea726291d68d68",
+      "targetTable": "chapters",
+      "targetId": "7938f029-af29-55f0-8a11-7bc28bf91237",
+      "canonicalKey": "chapters:68d74e52c6ea726291d68d68"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74afb31feaebba6d2e30e",
+      "targetTable": "chapters",
+      "targetId": "65ee7d4f-25cc-50e8-9d04-365883bc8560",
+      "canonicalKey": "chapters:68d74afb31feaebba6d2e30e"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74f0cc6ea726291d68d85",
+      "targetTable": "chapters",
+      "targetId": "39c374d4-578a-5010-8715-b9db02f2e6f5",
+      "canonicalKey": "chapters:68d74f0cc6ea726291d68d85"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74b5931feaebba6d2e318",
+      "targetTable": "chapters",
+      "targetId": "b21d99e4-2ea0-511b-bae7-2d5f71ad4be9",
+      "canonicalKey": "chapters:68d74b5931feaebba6d2e318"
+    },
+    {
+      "sourceCollection": "chapters",
+      "sourceId": "68d74ee3c6ea726291d68d79",
+      "targetTable": "chapters",
+      "targetId": "5093037d-483f-5ba6-ae15-5d6d7b24a779",
+      "canonicalKey": "chapters:68d74ee3c6ea726291d68d79"
+    },
+    {
+      "sourceCollection": "lessons",
+      "sourceId": "68db37aab3c14b74c6d157e4",
+      "targetTable": "lessons",
+      "targetId": "1b2e6643-0006-5e9a-a9f7-3d3078b83262",
+      "canonicalKey": "lessons:68db37aab3c14b74c6d157e4"
+    },
+    {
+      "sourceCollection": "lessons",
+      "sourceId": "68ea81fce927b2f14126d993",
+      "targetTable": "lessons",
+      "targetId": "832a4406-9f45-5e54-9dc4-dc5b05bd10fa",
+      "canonicalKey": "lessons:68ea81fce927b2f14126d993"
+    },
+    {
+      "sourceCollection": "lessons",
+      "sourceId": "68ebc1cde0a02fc17af9c33a",
+      "targetTable": "lessons",
+      "targetId": "8ee197b0-7353-554b-9688-a0b8c1409dde",
+      "canonicalKey": "lessons:68ebc1cde0a02fc17af9c33a"
+    },
+    {
+      "sourceCollection": "lessons",
+      "sourceId": "68db38d7dd667efb615e2549",
+      "targetTable": "lessons",
+      "targetId": "d7474c70-e5e6-5a54-8966-8e7e881f67ae",
+      "canonicalKey": "lessons:68db38d7dd667efb615e2549"
+    },
+    {
+      "sourceCollection": "lessons",
+      "sourceId": "68db3957dd667efb615e2553",
+      "targetTable": "lessons",
+      "targetId": "48e23490-db6e-5e74-adb4-d9294ab544eb",
+      "canonicalKey": "lessons:68db3957dd667efb615e2553"
+    },
+    {
+      "sourceCollection": "lessons",
+      "sourceId": "68db3998dd667efb615e255b",
+      "targetTable": "lessons",
+      "targetId": "e43dee5f-4e1d-5916-b840-8290765ff38f",
+      "canonicalKey": "lessons:68db3998dd667efb615e255b"
+    },
+    {
+      "sourceCollection": "lessons",
+      "sourceId": "68ea3cc06ce77905b891a18a",
+      "targetTable": "lessons",
+      "targetId": "b9bcc354-436a-574b-aee6-6a574f53d531",
+      "canonicalKey": "lessons:68ea3cc06ce77905b891a18a"
+    },
+    {
+      "sourceCollection": "quizzes",
+      "sourceId": "68efc24556c8e188e87cd453",
+      "targetTable": "quizzes",
+      "targetId": "9ef997e1-64a1-5391-8647-7b59ddb68d36",
+      "canonicalKey": "quizzes:68efc24556c8e188e87cd453"
+    },
+    {
+      "sourceCollection": "quizzes",
+      "sourceId": "68efc770ae8878e95b96e848",
+      "targetTable": "quizzes",
+      "targetId": "b9e14796-def1-59ae-8f7a-b54ad53a8392",
+      "canonicalKey": "quizzes:68efc770ae8878e95b96e848"
+    },
+    {
+      "sourceCollection": "quizzes",
+      "sourceId": "68ef66bed0786b1debaceb61",
+      "targetTable": "quizzes",
+      "targetId": "d40087b3-0917-5e3c-bc44-0f36d3d8d127",
+      "canonicalKey": "quizzes:68ef66bed0786b1debaceb61"
+    },
+    {
+      "sourceCollection": "questions",
+      "sourceId": "68ee63bc181d7323813f9266",
+      "targetTable": "questions",
+      "targetId": "efac87d1-9e7d-5dca-9557-e6692b953ed4",
+      "canonicalKey": "questions:68ee63bc181d7323813f9266"
+    },
+    {
+      "sourceCollection": "questions",
+      "sourceId": "68ee63ab181d7323813f925f",
+      "targetTable": "questions",
+      "targetId": "ae9f84cd-eadb-5719-91d5-57986523aa5a",
+      "canonicalKey": "questions:68ee63ab181d7323813f925f"
+    },
+    {
+      "sourceCollection": "questions",
+      "sourceId": "68efc26e56c8e188e87cd459",
+      "targetTable": "questions",
+      "targetId": "44d65db9-dd52-5f69-9d79-3881dab83f83",
+      "canonicalKey": "questions:68efc26e56c8e188e87cd459"
+    },
+    {
+      "sourceCollection": "questions",
+      "sourceId": "68ee63cb181d7323813f926d",
+      "targetTable": "questions",
+      "targetId": "4c6c56ea-e2c4-5455-b92e-4b28c91ec15f",
+      "canonicalKey": "questions:68ee63cb181d7323813f926d"
+    },
+    {
+      "sourceCollection": "questions",
+      "sourceId": "68efc79eae8878e95b96e851",
+      "targetTable": "questions",
+      "targetId": "148ea4a5-0c35-5e40-b33b-87d5f35440dd",
+      "canonicalKey": "questions:68efc79eae8878e95b96e851"
+    },
+    {
+      "sourceCollection": "quizsubmissions",
+      "sourceId": "68ef69853c8bd4c6638d55fe",
+      "targetTable": "quiz_submissions",
+      "targetId": "e18994c4-b95d-5cfe-b771-0640b7daaa16",
+      "canonicalKey": "quiz_submissions:68ef69853c8bd4c6638d55fe"
+    },
+    {
+      "sourceCollection": "quizsubmissions",
+      "sourceId": "68efc69db07fc600498d3d9d",
+      "targetTable": "quiz_submissions",
+      "targetId": "f35cde15-b3a1-5bb1-af39-49fede0a7237",
+      "canonicalKey": "quiz_submissions:68efc69db07fc600498d3d9d"
+    },
+    {
+      "sourceCollection": "orders",
+      "sourceId": "68ef547cae8e26580c4f19a8",
+      "targetTable": "orders",
+      "targetId": "d1cb1f28-b9d9-54d4-8765-347e83edae80",
+      "canonicalKey": "orders:68ef547cae8e26580c4f19a8"
+    },
+    {
+      "sourceCollection": "orders",
+      "sourceId": "68ebc85ab800ff9b01818de5",
+      "targetTable": "orders",
+      "targetId": "9f5caf0c-d3e8-5c12-9680-4c7c252f82e6",
+      "canonicalKey": "orders:68ebc85ab800ff9b01818de5"
+    },
+    {
+      "sourceCollection": "orders",
+      "sourceId": "68e537b09bea269a583ed9e1",
+      "targetTable": "orders",
+      "targetId": "5e4ed149-77cc-55e2-bf42-204f30a2fd22",
+      "canonicalKey": "orders:68e537b09bea269a583ed9e1"
+    },
+    {
+      "sourceCollection": "orders",
+      "sourceId": "68f1ddc43af8d5cb1c869f20",
+      "targetTable": "orders",
+      "targetId": "f9956fbe-2c25-512c-b61d-197dd5e38b1d",
+      "canonicalKey": "orders:68f1ddc43af8d5cb1c869f20"
+    },
+    {
+      "sourceCollection": "orders",
+      "sourceId": "68e5257e43b2786ec96458e8",
+      "targetTable": "orders",
+      "targetId": "5bc2c64a-9759-5776-bc4e-693908008d91",
+      "canonicalKey": "orders:68e5257e43b2786ec96458e8"
+    },
+    {
+      "sourceCollection": "orders",
+      "sourceId": "68e537a39bea269a583ed9d6",
+      "targetTable": "orders",
+      "targetId": "c8433382-29c0-556a-ad7b-8086161f2179",
+      "canonicalKey": "orders:68e537a39bea269a583ed9d6"
+    },
+    {
+      "sourceCollection": "orders",
+      "sourceId": "68ebc888b800ff9b01818dfb",
+      "targetTable": "orders",
+      "targetId": "53831596-cdac-5662-81b5-de30ba8ea11e",
+      "canonicalKey": "orders:68ebc888b800ff9b01818dfb"
+    },
+    {
+      "sourceCollection": "orders",
+      "sourceId": "68ebc5ce500211ca4f063445",
+      "targetTable": "orders",
+      "targetId": "b6e71563-d3b3-5c37-b933-ceebc3859896",
+      "canonicalKey": "orders:68ebc5ce500211ca4f063445"
+    },
+    {
+      "sourceCollection": "coupons",
+      "sourceId": "68db532c52576f19efb3925d",
+      "targetTable": "coupons",
+      "targetId": "9ab7f90b-1b48-5f58-a8b0-074bfb524cc4",
+      "canonicalKey": "coupons:68db532c52576f19efb3925d"
+    },
+    {
+      "sourceCollection": "coupons",
+      "sourceId": "68db535752576f19efb39264",
+      "targetTable": "coupons",
+      "targetId": "2407ef31-489a-5905-81d7-11cf88b3ea3b",
+      "canonicalKey": "coupons:68db535752576f19efb39264"
+    },
+    {
+      "sourceCollection": "enrollments",
+      "sourceId": "68e537a49bea269a583ed9d8",
+      "targetTable": "enrollments",
+      "targetId": "3acb5ff8-859b-58c9-a3b6-ff56e45ab790",
+      "canonicalKey": "enrollments:68e537a49bea269a583ed9d8"
+    },
+    {
+      "sourceCollection": "enrollments",
+      "sourceId": "68e53837d761d319a244bab6",
+      "targetTable": "enrollments",
+      "targetId": "7f8e9f5c-6d7b-5ee5-9d20-612860e8ef1c",
+      "canonicalKey": "enrollments:68e53837d761d319a244bab6"
+    },
+    {
+      "sourceCollection": "enrollments",
+      "sourceId": "68ebc888b800ff9b01818dfd",
+      "targetTable": "enrollments",
+      "targetId": "f8fa39bc-cc74-5fa4-93de-bd3449c97dec",
+      "canonicalKey": "enrollments:68ebc888b800ff9b01818dfd"
+    },
+    {
+      "sourceCollection": "enrollments",
+      "sourceId": "68f1df6a1a2789bf18d7b7b0",
+      "targetTable": "enrollments",
+      "targetId": "41833870-5797-5fc1-a5cb-8a4bed7a9882",
+      "canonicalKey": "enrollments:68f1df6a1a2789bf18d7b7b0"
+    },
+    {
+      "sourceCollection": "enrollments",
+      "sourceId": "68ef54a21a2789bf18d7b4a0",
+      "targetTable": "enrollments",
+      "targetId": "ee9c2af9-dce9-5f8c-9224-2887cfb05808",
+      "canonicalKey": "enrollments:68ef54a21a2789bf18d7b4a0"
+    },
+    {
+      "sourceCollection": "progresses",
+      "sourceId": "68ef5b771a2789bf18d7b4ac",
+      "targetTable": "progress",
+      "targetId": "1e97ec95-e80f-5d11-941e-0af4ae83f16c",
+      "canonicalKey": "progress:68ef5b771a2789bf18d7b4ac"
+    },
+    {
+      "sourceCollection": "progresses",
+      "sourceId": "68ef5b7e1a2789bf18d7b4ad",
+      "targetTable": "progress",
+      "targetId": "fb5e5312-3d53-533f-a773-4cc9e6ff5b05",
+      "canonicalKey": "progress:68ef5b7e1a2789bf18d7b4ad"
+    },
+    {
+      "sourceCollection": "progresses",
+      "sourceId": "68ef5bbb1a2789bf18d7b4b1",
+      "targetTable": "progress",
+      "targetId": "6f66b0e2-9ecd-5dbd-89ef-082056123571",
+      "canonicalKey": "progress:68ef5bbb1a2789bf18d7b4b1"
+    },
+    {
+      "sourceCollection": "progresses",
+      "sourceId": "68e49e7cd761d319a244ba65",
+      "targetTable": "progress",
+      "targetId": "32c877bb-c814-5f53-a230-57473ef3a71b",
+      "canonicalKey": "progress:68e49e7cd761d319a244ba65"
+    },
+    {
+      "sourceCollection": "certificates",
+      "sourceId": "68efcdd70f6030b1a6d87068",
+      "targetTable": "certificates",
+      "targetId": "700155f8-c123-5929-b7d2-55a8c825f084",
+      "canonicalKey": "certificates:68efcdd70f6030b1a6d87068"
+    },
+    {
+      "sourceCollection": "ratings",
+      "sourceId": "68ebd62c7dc661dee7403afb",
+      "targetTable": "ratings",
+      "targetId": "71139688-328f-5582-97ac-b5ea2696166b",
+      "canonicalKey": "ratings:68ebd62c7dc661dee7403afb"
+    },
+    {
+      "sourceCollection": "favoritecourses",
+      "sourceId": "68e876c519f9f799c75dd8c7",
+      "targetTable": "favorite_courses",
+      "targetId": "dbcb848a-f990-5b0c-a4f1-d36a7353fed6",
+      "canonicalKey": "favorite_courses:68e876c519f9f799c75dd8c7"
+    },
+    {
+      "sourceCollection": "favoritecourses",
+      "sourceId": "68e874fafdc48c7ff5953fbd",
+      "targetTable": "favorite_courses",
+      "targetId": "35b79a59-fe3c-52fe-89df-897979519f83",
+      "canonicalKey": "favorite_courses:68e874fafdc48c7ff5953fbd"
+    },
+    {
+      "sourceCollection": "comments",
+      "sourceId": "68eccc8b1ad0a8e2a36f98f0",
+      "targetTable": "comments",
+      "targetId": "fd6ded83-54e0-5807-b5af-244551274a22",
+      "canonicalKey": "comments:68eccc8b1ad0a8e2a36f98f0"
+    },
+    {
+      "sourceCollection": "comments",
+      "sourceId": "69058ecb9184ad3b58ae5e6d",
+      "targetTable": "comments",
+      "targetId": "7360b149-a741-5f92-be0d-03d7b8ed1f18",
+      "canonicalKey": "comments:69058ecb9184ad3b58ae5e6d"
+    },
+    {
+      "sourceCollection": "comments",
+      "sourceId": "690e9c3a8f702b1a58b3e451",
+      "targetTable": "comments",
+      "targetId": "23509fc9-95b1-5d85-b2b2-8eda403ecb9c",
+      "canonicalKey": "comments:690e9c3a8f702b1a58b3e451"
+    },
+    {
+      "sourceCollection": "comments",
+      "sourceId": "69057a339184ad3b58ae5b5b",
+      "targetTable": "comments",
+      "targetId": "c63f4242-d27c-59ff-8f32-3de193d7274d",
+      "canonicalKey": "comments:69057a339184ad3b58ae5b5b"
+    },
+    {
+      "sourceCollection": "comments",
+      "sourceId": "69058ed59184ad3b58ae5e76",
+      "targetTable": "comments",
+      "targetId": "15cf3a1b-74eb-50a7-95f7-054e88edf190",
+      "canonicalKey": "comments:69058ed59184ad3b58ae5e76"
+    },
+    {
+      "sourceCollection": "comments",
+      "sourceId": "69058f199184ad3b58ae5eac",
+      "targetTable": "comments",
+      "targetId": "3a7af629-3b9d-5328-9b49-429dddfc5a28",
+      "canonicalKey": "comments:69058f199184ad3b58ae5eac"
+    },
+    {
+      "sourceCollection": "comments",
+      "sourceId": "69060bcb98424643f32add83",
+      "targetTable": "comments",
+      "targetId": "e1faaf44-78d9-5b59-8d5b-7b3934826eee",
+      "canonicalKey": "comments:69060bcb98424643f32add83"
+    },
+    {
+      "sourceCollection": "comments",
+      "sourceId": "68ecccf11ad0a8e2a36f9913",
+      "targetTable": "comments",
+      "targetId": "d4b53631-ecf4-5507-9a6a-2bf9fe6dc2f9",
+      "canonicalKey": "comments:68ecccf11ad0a8e2a36f9913"
+    },
+    {
+      "sourceCollection": "conversations",
+      "sourceId": "68f1dcdb0052411ea7c73a5b",
+      "targetTable": "conversations",
+      "targetId": "c44f9756-f63a-5e29-982e-cb647bf92ec3",
+      "canonicalKey": "conversations:68f1dcdb0052411ea7c73a5b"
+    },
+    {
+      "sourceCollection": "conversations",
+      "sourceId": "68f1db483cd33f224e5d8d3a",
+      "targetTable": "conversations",
+      "targetId": "3dcaa9d2-72c4-5a34-b0d0-13089075352e",
+      "canonicalKey": "conversations:68f1db483cd33f224e5d8d3a"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "69060bb098424643f32add67",
+      "targetTable": "messages",
+      "targetId": "0cdeec55-79ec-591b-ab4b-0f8ce3b391a2",
+      "canonicalKey": "messages:69060bb098424643f32add67"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "690964497507162dd7e80562",
+      "targetTable": "messages",
+      "targetId": "c3341836-8d22-5c66-a592-8700e735c343",
+      "canonicalKey": "messages:690964497507162dd7e80562"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "690e9c628f702b1a58b3e476",
+      "targetTable": "messages",
+      "targetId": "e8bded86-fa72-58f8-8dbe-927b986eba99",
+      "canonicalKey": "messages:690e9c628f702b1a58b3e476"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "690607d998424643f32adcf6",
+      "targetTable": "messages",
+      "targetId": "5025315d-e720-5a04-a099-4ba987c2dabd",
+      "canonicalKey": "messages:690607d998424643f32adcf6"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "690e9c538f702b1a58b3e468",
+      "targetTable": "messages",
+      "targetId": "c35a7a24-13a1-55d4-81f2-32c77c6d70f9",
+      "canonicalKey": "messages:690e9c538f702b1a58b3e468"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "690e9c588f702b1a58b3e46e",
+      "targetTable": "messages",
+      "targetId": "09d8032f-0f7f-51a0-8932-9d7768e8b155",
+      "canonicalKey": "messages:690e9c588f702b1a58b3e46e"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "690964427507162dd7e8055f",
+      "targetTable": "messages",
+      "targetId": "30269917-c266-5b4d-886d-71a3864c0736",
+      "canonicalKey": "messages:690964427507162dd7e8055f"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "690607dd98424643f32adcf9",
+      "targetTable": "messages",
+      "targetId": "ada0e606-92c5-5f70-acad-e567c9f8c3d2",
+      "canonicalKey": "messages:690607dd98424643f32adcf9"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "690e9c578f702b1a58b3e46b",
+      "targetTable": "messages",
+      "targetId": "0fea491c-1e0a-52bd-b55b-437e81f7e26f",
+      "canonicalKey": "messages:690e9c578f702b1a58b3e46b"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "69060bb398424643f32add6a",
+      "targetTable": "messages",
+      "targetId": "02dca910-cbc5-5555-8601-a71046935a58",
+      "canonicalKey": "messages:69060bb398424643f32add6a"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "690e9c608f702b1a58b3e473",
+      "targetTable": "messages",
+      "targetId": "20fe6ce4-c0c1-54d6-a1ad-171b9321208d",
+      "canonicalKey": "messages:690e9c608f702b1a58b3e473"
+    },
+    {
+      "sourceCollection": "messages",
+      "sourceId": "690e9c4d8f702b1a58b3e463",
+      "targetTable": "messages",
+      "targetId": "2887ea33-c817-5a6b-b33d-c42a048c9ded",
+      "canonicalKey": "messages:690e9c4d8f702b1a58b3e463"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68f1ddc43af8d5cb1c869f22",
+      "targetTable": "notifications",
+      "targetId": "daf144ef-ae5b-5606-8f01-8474b20dadc5",
+      "canonicalKey": "notifications:68f1ddc43af8d5cb1c869f22"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "690589029184ad3b58ae5cc5",
+      "targetTable": "notifications",
+      "targetId": "b086c284-f57e-524f-ae9c-2c9e469b6bd9",
+      "canonicalKey": "notifications:690589029184ad3b58ae5cc5"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ebc85ab800ff9b01818dec",
+      "targetTable": "notifications",
+      "targetId": "74f47b16-0867-5eca-8889-eb8403746b68",
+      "canonicalKey": "notifications:68ebc85ab800ff9b01818dec"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ef54a1ae8e26580c4f19b7",
+      "targetTable": "notifications",
+      "targetId": "cd6af296-800a-555e-80d3-314ba0878939",
+      "canonicalKey": "notifications:68ef54a1ae8e26580c4f19b7"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ebc109e0a02fc17af9c31f",
+      "targetTable": "notifications",
+      "targetId": "29b82480-3e6c-54fe-954f-367885cc6f02",
+      "canonicalKey": "notifications:68ebc109e0a02fc17af9c31f"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ef547cae8e26580c4f19aa",
+      "targetTable": "notifications",
+      "targetId": "5a14b803-8d4a-58e4-b236-00c8f1ad555a",
+      "canonicalKey": "notifications:68ef547cae8e26580c4f19aa"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "69058ed59184ad3b58ae5e79",
+      "targetTable": "notifications",
+      "targetId": "7a80147e-d6b8-5380-89bf-c80a71177396",
+      "canonicalKey": "notifications:69058ed59184ad3b58ae5e79"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "69058f199184ad3b58ae5eaf",
+      "targetTable": "notifications",
+      "targetId": "57623d7d-e7ee-5a05-939f-258052022da6",
+      "canonicalKey": "notifications:69058f199184ad3b58ae5eaf"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ef689c3c8bd4c6638d55d8",
+      "targetTable": "notifications",
+      "targetId": "56ea9f1c-de7f-5b04-9f6c-7a5707716fa9",
+      "canonicalKey": "notifications:68ef689c3c8bd4c6638d55d8"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68eccc8b1ad0a8e2a36f98f3",
+      "targetTable": "notifications",
+      "targetId": "5a898f90-9f16-56c3-ad87-86f800ed6a51",
+      "canonicalKey": "notifications:68eccc8b1ad0a8e2a36f98f3"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "69058ecb9184ad3b58ae5e70",
+      "targetTable": "notifications",
+      "targetId": "5d566e56-2641-58ad-91cf-54866c6eb672",
+      "canonicalKey": "notifications:69058ecb9184ad3b58ae5e70"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "690e9c3b8f702b1a58b3e454",
+      "targetTable": "notifications",
+      "targetId": "d6de3839-4fba-5957-a007-9ef3d5ea840c",
+      "canonicalKey": "notifications:690e9c3b8f702b1a58b3e454"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ebc167e0a02fc17af9c32c",
+      "targetTable": "notifications",
+      "targetId": "108058af-4003-5dba-8af9-8f0362ecbe49",
+      "canonicalKey": "notifications:68ebc167e0a02fc17af9c32c"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ebc888b800ff9b01818e02",
+      "targetTable": "notifications",
+      "targetId": "5412be2b-85bf-5661-920f-66df9d8486f8",
+      "canonicalKey": "notifications:68ebc888b800ff9b01818e02"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68efc69db07fc600498d3da2",
+      "targetTable": "notifications",
+      "targetId": "d10e1133-bd14-545b-a32c-04467f1d79b3",
+      "canonicalKey": "notifications:68efc69db07fc600498d3da2"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "69057a349184ad3b58ae5b5e",
+      "targetTable": "notifications",
+      "targetId": "df529b6c-3caf-56e9-bf8c-6831f417e297",
+      "canonicalKey": "notifications:69057a349184ad3b58ae5b5e"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ecccf11ad0a8e2a36f9916",
+      "targetTable": "notifications",
+      "targetId": "754d3c82-1616-5087-a4c5-c7b2113888fe",
+      "canonicalKey": "notifications:68ecccf11ad0a8e2a36f9916"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ef69303c8bd4c6638d55f1",
+      "targetTable": "notifications",
+      "targetId": "4192dfca-c0cf-545a-ae85-5353b70e7168",
+      "canonicalKey": "notifications:68ef69303c8bd4c6638d55f1"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68f1ddee3af8d5cb1c869f2f",
+      "targetTable": "notifications",
+      "targetId": "c151524f-2817-5d17-bc1d-b3676902ea50",
+      "canonicalKey": "notifications:68f1ddee3af8d5cb1c869f2f"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68f1df6840f8c0ca6f5c8eeb",
+      "targetTable": "notifications",
+      "targetId": "ff727d4b-4f0e-55c9-8f41-3b3678dcbb0f",
+      "canonicalKey": "notifications:68f1df6840f8c0ca6f5c8eeb"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ef474f663d12d8cb103d98",
+      "targetTable": "notifications",
+      "targetId": "a83c75dc-8796-540b-8944-0d2cc2b3b900",
+      "canonicalKey": "notifications:68ef474f663d12d8cb103d98"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "69060bcb98424643f32add86",
+      "targetTable": "notifications",
+      "targetId": "166f294d-d5ba-5db7-9d06-e142c3d05430",
+      "canonicalKey": "notifications:69060bcb98424643f32add86"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ebd62d7dc661dee7403afe",
+      "targetTable": "notifications",
+      "targetId": "0f19602f-5d85-5870-bdbc-3a57f0b22850",
+      "canonicalKey": "notifications:68ebd62d7dc661dee7403afe"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ef69853c8bd4c6638d5605",
+      "targetTable": "notifications",
+      "targetId": "9eebaebd-5d5e-54f6-8dc6-93796c67c232",
+      "canonicalKey": "notifications:68ef69853c8bd4c6638d5605"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ebc1cee0a02fc17af9c33e",
+      "targetTable": "notifications",
+      "targetId": "1e2ba1da-c20d-50df-88ee-7eed3c6a7e0a",
+      "canonicalKey": "notifications:68ebc1cee0a02fc17af9c33e"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ebc5ce500211ca4f063447",
+      "targetTable": "notifications",
+      "targetId": "d9470610-562b-5784-9b8c-b1626b86b528",
+      "canonicalKey": "notifications:68ebc5ce500211ca4f063447"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "690588ed9184ad3b58ae5cbb",
+      "targetTable": "notifications",
+      "targetId": "9bf4007b-32ae-5e01-97a8-c255b30d9bad",
+      "canonicalKey": "notifications:690588ed9184ad3b58ae5cbb"
+    },
+    {
+      "sourceCollection": "notifications",
+      "sourceId": "68ebc91ccb77a6fdd288082d",
+      "targetTable": "notifications",
+      "targetId": "f951688c-e1b1-5919-ab5e-309c26e1be00",
+      "canonicalKey": "notifications:68ebc91ccb77a6fdd288082d"
+    }
+  ]
+}

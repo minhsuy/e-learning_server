@@ -22,12 +22,17 @@ import {
   getUserDetailValidator,
   updateUserByAdminValidator
 } from '~/middlewares/admin.middleware'
-import { createCategoryValidator, updateCategoryValidator } from '~/middlewares/category.middleware'
+import {
+  categoryIdValidator,
+  createCategoryValidator,
+  updateCategoryValidator
+} from '~/middlewares/category.middleware'
 import {
   courseIdValidator,
   createCourseValidator,
   listPublicCoursesValidator,
-  updateCourseByAdminValidator
+  updateCourseByAdminValidator,
+  updateCourseStatusValidator
 } from '~/middlewares/course.middleware'
 import { handleValidationErrors } from '~/middlewares/validate'
 import { isAdmin } from '~/middlewares/verifyRole'
@@ -134,7 +139,7 @@ adminRouter.patch(
   '/courses/teacher/:id',
   verifyAccessToken,
   isAdmin,
-  listPublicCoursesValidator,
+  updateCourseStatusValidator,
   handleValidationErrors,
   updateCourseStatusForTeacherController
 )
@@ -157,7 +162,7 @@ adminRouter.delete(
   '/categories/:id',
   verifyAccessToken,
   isAdmin,
-  courseIdValidator,
+  categoryIdValidator,
   handleValidationErrors,
   deleteCategoryController
 )

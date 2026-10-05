@@ -1,5 +1,5 @@
 import express from 'express'
-import connectDB from './config/dbConnect'
+import { connectPrisma } from './config/prisma'
 import { indexRoutes } from './routes/index.route'
 import dotenv from 'dotenv'
 import { errorHandler } from './middlewares/errorHandler'
@@ -9,7 +9,9 @@ import { initSocket } from './socket/initSocket'
 import cors from 'cors'
 dotenv.config()
 const app = express()
-connectDB()
+connectPrisma().catch((err) => {
+  console.error('Prisma initialization error on startup:', err.message)
+})
 
 const port = process.env.PORT
 

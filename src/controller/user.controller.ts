@@ -22,8 +22,13 @@ dotenv.config()
 
 //  Register user
 export const registerController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const newUser = await registerUserService(req.body)
-  if (!newUser) return res.status(400).json({ success: false, message: 'Đăng ký không thành công !' })
+  const result = await registerUserService(req.body)
+  if (!result || (result as any).success === false) {
+    if ((result as any)?.errors) {
+      return res.status((result as any).statusCode || 400).json({ errors: (result as any).errors })
+    }
+    return res.status(400).json({ success: false, message: (result as any)?.message || 'Đăng ký không thành công !' })
+  }
   return res
     .status(200)
     .json({ success: true, message: 'Đăng ký tài khoản thành công . Vui lòng check email để xác thực !' })
@@ -45,7 +50,10 @@ export const loginController = asyncHandler(async (req: Request, res: Response):
   const result = await loginUserService({ email, password })
 
   if (!result.success) {
-    return res.status(401).json({
+    if (result.errors) {
+      return res.status(result.statusCode ?? 400).json({ errors: result.errors })
+    }
+    return res.status(result.statusCode ?? 401).json({
       success: false,
       message: result.message
     })

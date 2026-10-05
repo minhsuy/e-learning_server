@@ -37,7 +37,7 @@ export const getMyOrdersController = asyncHandler(async (req: Request, res: Resp
 
 // update order (teacher or admin)
 export const updateOrderStatusController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { id } = req.params
+  const id = req.params.id as string
   const { status } = req.body
   const { userId, role } = req.user as { userId: string; role: string }
 

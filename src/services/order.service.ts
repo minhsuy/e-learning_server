@@ -1,139 +1,238 @@
-import { FilterQuery, Types } from 'mongoose'
-import OrderModel from '~/models/order.model'
-import CourseModel from '~/models/course.model'
-import CouponModel from '~/models/coupon.model'
-import { ECouponType, ENotificationType, EOrderStatus, UserRole } from '~/types/enum'
-import UserModel from '~/models/user.model'
-import EnrollmentModel from '~/models/enrollment.model'
-import { pushNotificationService } from './notification.service'
-import ConversationModel from '~/models/conversation.model'
+import { CourseStatus, ECouponType, EOrderStatus } from '@prisma/client'
+import { ENotificationType, UserRole } from '~/types/enum'
+import { prisma } from '~/config/prisma'
+import {
+  checkExistingCompletedOrder,
+  checkExistingPendingOrder,
+  countMyOrders,
+  countOrdersWithFilter,
+  createOrder,
+  deleteOrderById,
+  findMyOrders,
+  findOrderById,
+  findOrdersWithFilter,
+  updateOrderStatus
+} from '~/repositories/order.repository'
+import {
+  decrementCouponUsed,
+  findCouponWithCoursesByCode,
+  incrementCouponUsed
+} from '~/repositories/coupon.repository'
+import {
+  findCourseById,
+  findCoursesWithPagination,
+  incrementCourseSoldCount
+} from '~/repositories/course.repository'
 
-export const createOrderService = async ({
-  userId,
-  courseId,
-  couponCode = undefined
-}: {
+/**
+ * Map status string to Prisma EOrderStatus enum
+ */
+export const toPrismaOrderStatus = (status?: string): EOrderStatus => {
+  if (!status) return EOrderStatus.PENDING
+  const upper = String(status).toUpperCase()
+  if (upper === 'COMPLETED') return EOrderStatus.COMPLETED
+  if (upper === 'REJECTED') return EOrderStatus.REJECTED
+  return EOrderStatus.PENDING
+}
+import {
+  deleteEnrollment,
+  upsertEnrollment
+} from '~/repositories/enrollment.repository'
+import { isValidUUID, withCompatId } from '~/utils/uuid'
+import { ServiceResponse } from '~/types/type'
+import { pushNotificationService } from './notification.service'
+import {
+  findCourseGroupConversation,
+  createConversationWithParticipants
+} from '~/repositories/conversation.repository'
+import { addParticipant } from '~/repositories/conversationParticipant.repository'
+
+
+/**
+ * Format order entity for API response, converting Decimal types to Numbers
+ * and adding MongoDB backward-compatible `_id` aliases.
+ * Safely handles orphan orders where `course` is null.
+ */
+const formatOrderResponse = (order: any) => {
+  return {
+    ...withCompatId(order),
+    amount: Number(order.amount),
+    discount: Number(order.discount),
+    total: Number(order.total),
+    course: order.course
+      ? {
+          ...withCompatId(order.course),
+          price: Number(order.course.price)
+        }
+      : null,
+    coupon: order.coupon
+      ? {
+          ...withCompatId(order.coupon),
+          value: Number(order.coupon.value)
+        }
+      : null,
+    user: order.user ? withCompatId(order.user) : null
+  }
+}
+
+/**
+ * Create a new order (with optional coupon and free course handling).
+ */
+export const createOrderService = async (params: {
   userId: string
-  courseId: string
+  payload?: {
+    courseId: string
+    couponCode?: string
+  }
+  courseId?: string
   couponCode?: string
-}) => {
-  const course = await CourseModel.findById(courseId)
+}): Promise<ServiceResponse> => {
+  const userId = params.userId
+  const courseId = params.courseId || params.payload?.courseId || ''
+  const couponCode = params.couponCode || params.payload?.couponCode
+
+  if (!isValidUUID(userId)) {
+    return { success: false, statusCode: 401, message: 'Invalid user' }
+  }
+  if (!isValidUUID(courseId)) {
+    return { success: false, statusCode: 400, message: 'Invalid Course ID' }
+  }
+
+  // 1. Verify course existence
+  const course = await findCourseById(courseId)
   if (!course) {
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
-  if (course.author.toString() === userId) {
+  // 2. Reject destroyed / soft-deleted courses
+  if (course.isDestroyed) {
+    return { success: false, statusCode: 400, message: 'Course is deleted or no longer available' }
+  }
+
+  // 3. Reject pending approval courses
+  if (course.status === CourseStatus.PENDING || String(course.status).toUpperCase() === 'PENDING') {
+    return { success: false, statusCode: 400, message: 'Course is pending approval and cannot be ordered' }
+  }
+
+  // 4. Prevent purchasing own course
+  if (course.authorId === userId) {
     return { success: false, statusCode: 400, message: 'You cannot buy your own course' }
   }
 
-  const existingOrder = await OrderModel.findOne({
-    user: userId,
-    course: courseId,
-    status: EOrderStatus.COMPLETED
-  })
+  // 3. Prevent duplicate completed order
+  const existingOrder = await checkExistingCompletedOrder(userId, courseId)
   if (existingOrder) {
     return { success: false, statusCode: 400, message: 'You already enrolled in this course' }
   }
 
-  const pendingOrder = await OrderModel.findOne({
-    user: userId,
-    course: courseId,
-    status: EOrderStatus.PENDING
-  })
+  // 4. Prevent duplicate pending order
+  const pendingOrder = await checkExistingPendingOrder(userId, courseId)
   if (pendingOrder) {
     return {
       success: false,
       statusCode: 400,
       message: 'You already have a pending order for this course',
-      data: pendingOrder
+      data: formatOrderResponse(pendingOrder)
     }
   }
 
-  // Total
-  let total = course.price
+  // 5. Coupon calculation
   let discount = 0
-  let coupon: any = null
+  let couponRecord: any = null
 
-  if (couponCode) {
-    coupon = await CouponModel.findOne({ code: couponCode, active: true })
-    if (!coupon) {
-      return { success: false, statusCode: 400, message: 'Invalid coupon code' }
-    }
-
-    if (coupon.limit && coupon.used >= coupon.limit) {
-      return { success: false, statusCode: 400, message: 'Coupon usage limit reached' }
+  if (couponCode && couponCode.trim()) {
+    const coupon = await findCouponWithCoursesByCode(couponCode.trim())
+    if (!coupon || !coupon.active) {
+      return { success: false, statusCode: 404, message: 'Coupon not found or inactive' }
     }
 
     const now = new Date()
     if (coupon.startDate && coupon.startDate > now) {
-      return { success: false, statusCode: 400, message: 'Coupon not started yet' }
+      return { success: false, statusCode: 400, message: 'Coupon has not started yet' }
     }
     if (coupon.endDate && coupon.endDate < now) {
-      return { success: false, statusCode: 400, message: 'Coupon expired' }
+      return { success: false, statusCode: 400, message: 'Coupon has expired' }
+    }
+    if (coupon.limit !== null && coupon.limit !== undefined && coupon.used >= coupon.limit) {
+      return { success: false, statusCode: 400, message: 'Coupon usage limit reached' }
+    }
+    if (coupon.courses.length > 0) {
+      const isEligible = coupon.courses.some((c) => c.courseId === courseId)
+      if (!isEligible) {
+        return { success: false, statusCode: 400, message: 'Coupon not valid for this course' }
+      }
     }
 
-    // Check coupon apply to course
-    if (coupon.courses.length > 0 && !coupon.courses.includes(course._id)) {
-      return { success: false, statusCode: 400, message: 'Coupon not valid for this course' }
-    }
+    const coursePrice = Number(course.price)
+    const couponValue = Number(coupon.value)
 
-    // Tính discount
     if (coupon.type === ECouponType.PERCENTAGE) {
-      discount = Math.floor((course.price * coupon.value) / 100)
+      discount = (coursePrice * couponValue) / 100
     } else {
-      discount = coupon.value
+      discount = couponValue
     }
-
-    if (discount > total) discount = total
-    total = total - discount
-
-    coupon.used += 1
-    await coupon.save()
+    couponRecord = coupon
   }
 
-  // Free course
+  const coursePrice = Number(course.price)
+  const total = Math.max(coursePrice - discount, 0)
   const status = total === 0 ? EOrderStatus.COMPLETED : EOrderStatus.PENDING
-
   const orderCode = `DH-${Date.now().toString().slice(6)}`
 
-  const order = await OrderModel.create({
-    code: orderCode,
-    total,
-    discount,
-    coupon: coupon?._id,
-    course: new Types.ObjectId(courseId),
-    user: new Types.ObjectId(userId),
-    status
+  // 6. Execute PostgreSQL transaction
+  const order = await prisma.$transaction(async (tx) => {
+    const newOrder = await createOrder(
+      {
+        code: orderCode,
+        amount: coursePrice,
+        discount,
+        total,
+        couponId: couponRecord?.id ?? null,
+        courseId,
+        userId,
+        status
+      },
+      tx
+    )
+
+    if (status === EOrderStatus.COMPLETED) {
+      // Free order: immediately activate enrollment and increment sold count
+      await incrementCourseSoldCount(courseId, 1, tx)
+      await upsertEnrollment(userId, courseId, { progress: 0, status: 'ACTIVE' as any }, tx)
+      if (couponRecord) {
+        await incrementCouponUsed(couponRecord.id, 1, tx)
+      }
+    }
+
+    return newOrder
   })
 
-  if (status === EOrderStatus.COMPLETED) {
-    await Promise.all([
-      UserModel.findByIdAndUpdate(userId, { $addToSet: { courses: courseId } }),
-      CourseModel.findByIdAndUpdate(courseId, { $inc: { sold: 1 } }),
-      EnrollmentModel.create({
-        user: new Types.ObjectId(userId),
-        course: new Types.ObjectId(courseId),
-        enrolledAt: new Date(),
-        progress: 0
-      })
-    ])
+
+
+  // 8. Push notification to course author
+  try {
+    await pushNotificationService({
+      senderId: userId,
+      receiverId: course.authorId,
+      type: ENotificationType.ORDER,
+      message: `Học viên vừa đăng ký khóa học "${course.title}"`,
+      relatedId: order.id
+    })
+  } catch (err) {
+    console.error('[Notification Error in createOrderService]:', err)
   }
-  await pushNotificationService({
-    senderId: userId,
-    receiverId: course.author.toString(),
-    type: ENotificationType.ORDER,
-    message: `Học viên vừa đăng ký khóa học "${course.title}"`,
-    relatedId: order._id.toString()
-  })
+
   return {
     success: true,
+    statusCode: 201,
     message: 'Order created successfully',
-    data: order
+    data: formatOrderResponse(order)
   }
 }
 
-// get my orders
-
+/**
+ * Get orders belonging to the current user.
+ */
 export const getMyOrdersService = async ({
   userId,
   page = 1,
@@ -144,140 +243,240 @@ export const getMyOrdersService = async ({
   page?: number
   limit?: number
   status?: string
-}) => {
-  const filter: FilterQuery<typeof OrderModel> = { user: userId }
-  if (status) filter.status = status
+}): Promise<ServiceResponse> => {
+  if (!isValidUUID(userId)) {
+    return { success: false, statusCode: 401, message: 'Invalid user' }
+  }
 
-  const skip = (page - 1) * limit
+  const orderStatus = status ? toPrismaOrderStatus(status) : undefined
 
   const [orders, total] = await Promise.all([
-    OrderModel.find(filter)
-      .populate({ path: 'course', select: 'title slug image price' })
-      .populate({ path: 'coupon', select: 'code value type' })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit),
-    OrderModel.countDocuments(filter)
+    findMyOrders({
+      userId,
+      page: Number(page),
+      limit: Number(limit),
+      status: orderStatus
+    }),
+    countMyOrders({
+      userId,
+      status: orderStatus
+    })
   ])
 
   return {
     success: true,
     message: 'Fetched my orders successfully',
     data: {
-      orders,
+      orders: orders.map(formatOrderResponse),
       pagination: {
-        page,
-        limit,
+        page: Number(page),
+        limit: Number(limit),
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / Number(limit)) || 1
       }
     }
   }
 }
 
-// update order status (teacher or admin)
-
-export const updateOrderStatusService = async ({
-  orderId,
-  status,
-  userId,
-  role
-}: {
-  orderId: string
-  status: EOrderStatus
+/**
+ * Update order status (for Teacher or Admin).
+ * Preserves legacy MongoDB hard-delete behavior when status is REJECTED per Owner approval.
+ */
+export const updateOrderStatusService = async (params: {
+  id?: string
+  orderId?: string
+  payload?: { status: EOrderStatus | string }
+  status?: EOrderStatus | string
   userId: string
   role: string
-}) => {
-  const order = await OrderModel.findById(orderId).populate('course')
+}): Promise<ServiceResponse> => {
+  const orderId = params.id || params.orderId || ''
+  const rawStatus = params.status || params.payload?.status || ''
+  const { userId, role } = params
+  const isTeacher = String(role).toLowerCase() === 'teacher'
+
+  if (!isValidUUID(orderId)) {
+    return { success: false, statusCode: 400, message: 'Invalid Order ID' }
+  }
+
+  const targetStatus = toPrismaOrderStatus(rawStatus as string)
+
+  const order = await findOrderById(orderId)
   if (!order) {
     return { success: false, statusCode: 404, message: 'Order not found' }
   }
 
-  if (role === UserRole.TEACHER) {
-    const course = order.course as any
-    if (course.author.toString() !== userId) {
+  // Idempotency guard: prevent duplicate processing and duplicate notifications if order is already in target status
+  if (order.status === targetStatus) {
+    return {
+      success: true,
+      message: `Order status is already ${targetStatus}`,
+      data: formatOrderResponse(order)
+    }
+  }
+
+  // ==========================================
+  // Defensive guard for historical orphan orders (course is null)
+  // ==========================================
+  if (!order.course || !order.courseId) {
+    if (isTeacher) {
+      return {
+        success: false,
+        statusCode: 403,
+        message: 'You are not the owner of this course or the course no longer exists'
+      }
+    }
+
+    if (targetStatus === EOrderStatus.COMPLETED) {
+      return {
+        success: false,
+        statusCode: 400,
+        message: 'Cannot mark order as completed because its course no longer exists'
+      }
+    }
+
+    if (targetStatus === EOrderStatus.REJECTED && order.status === EOrderStatus.COMPLETED) {
+      return {
+        success: false,
+        statusCode: 400,
+        message: 'Cannot rollback or reject a completed order whose course no longer exists'
+      }
+    }
+
+    if (targetStatus === EOrderStatus.REJECTED) {
+      await prisma.$transaction(async (tx) => {
+        if (order.couponId) {
+          await decrementCouponUsed(order.couponId, 1, tx)
+        }
+        await deleteOrderById(orderId, tx)
+      })
+
+      return {
+        success: true,
+        message: 'Orphan pending order rejected and deleted successfully!'
+      }
+    }
+
+    const updated = await updateOrderStatus(orderId, targetStatus)
+    return {
+      success: true,
+      message: `Order updated to ${targetStatus}`,
+      data: formatOrderResponse(updated)
+    }
+  }
+
+  // ==========================================
+  // Normal order verification
+  // ==========================================
+  const course = await findCourseById(order.courseId)
+  if (isTeacher) {
+    if (!course || course.authorId !== userId) {
       return { success: false, statusCode: 403, message: 'You are not the owner of this course' }
     }
   }
 
-  if (status === EOrderStatus.REJECTED) {
-    if (order.status === EOrderStatus.COMPLETED) {
-      const ops: Promise<any>[] = [
-        UserModel.findByIdAndUpdate(order.user, { $pull: { courses: order.course } }),
-        CourseModel.findByIdAndUpdate(order.course, { $inc: { sold: -1 } })
-      ]
-      if (order.coupon) {
-        ops.push(CouponModel.findByIdAndUpdate(order.coupon, { $inc: { used: -1 } }))
+  // ==========================================
+  // Handle REJECTED (Preserve Legacy Hard Delete per Owner Decision)
+  // ==========================================
+  if (targetStatus === EOrderStatus.REJECTED) {
+    await prisma.$transaction(async (tx) => {
+      if (order.status === EOrderStatus.COMPLETED) {
+        // Rollback sold count and enrollment on PostgreSQL
+        await incrementCourseSoldCount(order.courseId!, -1, tx)
+        await deleteEnrollment(order.userId, order.courseId!, tx)
+        if (order.couponId) {
+          await decrementCouponUsed(order.couponId, 1, tx)
+        }
       }
-      await Promise.all(ops)
-    }
+      await deleteOrderById(orderId, tx)
+    })
 
-    await OrderModel.findByIdAndDelete(orderId)
+
+
     return {
       success: true,
       message: 'Order rejected and deleted successfully!'
     }
   }
 
-  if (status === EOrderStatus.COMPLETED) {
-    const ops: Promise<any>[] = [
-      UserModel.findByIdAndUpdate(order.user, { $addToSet: { courses: order.course } }),
-      CourseModel.findByIdAndUpdate(order.course, { $inc: { sold: 1 } }),
-      EnrollmentModel.findOneAndUpdate(
-        { user: order.user, course: order.course },
-        { user: order.user, course: order.course, enrolledAt: new Date() },
-        { upsert: true }
-      )
-    ]
-    if (order.coupon) {
-      ops.push(CouponModel.findByIdAndUpdate(order.coupon, { $inc: { used: 1 } }))
-    }
+  // ==========================================
+  // Handle COMPLETED
+  // ==========================================
+  if (targetStatus === EOrderStatus.COMPLETED) {
+    const updated = await prisma.$transaction(async (tx) => {
+      // 1. Increment sold count
+      await incrementCourseSoldCount(order.courseId!, 1, tx)
 
-    order.status = EOrderStatus.COMPLETED
-    ops.push(order.save())
+      // 2. Upsert enrollment
+      await upsertEnrollment(order.userId, order.courseId!, { progress: 0, status: 'ACTIVE' as any }, tx)
 
-    await Promise.all(ops)
-    const courseConversation = await ConversationModel.findOne({
-      course: order.course,
-      isGroup: true
-    })
-
-    if (courseConversation) {
-      const alreadyJoined = courseConversation.participants.some((id) => id.toString() === order.user.toString())
-      if (!alreadyJoined) {
-        courseConversation.participants.push(order.user)
-        await courseConversation.save()
+      // 3. Increment coupon usage if used
+      if (order.couponId) {
+        await incrementCouponUsed(order.couponId, 1, tx)
       }
-    } else {
-      const course = await CourseModel.findById(order.course).select('author')
-      await ConversationModel.create({
-        course: order.course,
-        name: `Q&A - ${course?.title}`,
-        participants: [order.user, course?.author],
-        isGroup: true
-      })
-    }
-    await pushNotificationService({
-      senderId: null,
-      receiverId: order.user.toString(),
-      type: ENotificationType.ORDER,
-      message: `Đơn hàng "${order.code}" của bạn đã được hoàn tất !`,
-      relatedId: order._id.toString()
+
+      // 4. Update status to COMPLETED
+      return updateOrderStatus(orderId, EOrderStatus.COMPLETED, tx)
     })
+
+
+
+    // 6. Join or create group conversation in PostgreSQL (Phase 9 Chat Migration)
+    try {
+      const courseConversation = await findCourseGroupConversation(order.courseId)
+
+      if (courseConversation) {
+        await addParticipant(courseConversation.id, order.userId)
+      } else {
+        const participants = [order.userId]
+        if (course?.authorId) {
+          participants.push(course.authorId)
+        }
+        await createConversationWithParticipants(
+          {
+            courseId: order.courseId,
+            name: `Q&A - ${course?.title || 'Course'}`,
+            isGroup: true
+          },
+          participants
+        )
+      }
+    } catch (err) {
+      console.error('[Conversation Integration Error in updateOrderStatusService]:', err)
+    }
+
+    // 7. Push notification to student
+    try {
+      await pushNotificationService({
+        senderId: null,
+        receiverId: order.userId,
+        type: ENotificationType.ORDER,
+        message: `Đơn hàng "${order.code}" của bạn đã được hoàn tất !`,
+        relatedId: order.id
+      })
+    } catch (err) {
+      console.error('[Notification Error in updateOrderStatusService]:', err)
+    }
+
     return {
       success: true,
-      message: 'Order completed successfully!'
+      message: 'Order completed successfully!',
+      data: formatOrderResponse(updated)
     }
   }
-  order.status = status
-  await order.save()
+
+  // Other status transitions
+  const updated = await updateOrderStatus(orderId, targetStatus)
   return {
     success: true,
-    message: `Order updated to ${status}`
+    message: `Order updated to ${targetStatus}`,
+    data: formatOrderResponse(updated)
   }
 }
 
-// get orders by admin/ teacher
+/**
+ * Get orders list for Admin or Teacher with search, filter, and pagination.
+ */
 export const getOrdersService = async ({
   page = 1,
   limit = 10,
@@ -294,47 +493,45 @@ export const getOrdersService = async ({
   sortBy?: string
   userId: string
   role: string
-}) => {
-  const filter: FilterQuery<typeof OrderModel> = {}
-
-  if (status) filter.status = status
-
-  if (search) {
-    filter.$or = [
-      { code: { $regex: search, $options: 'i' } },
-      { 'course.title': { $regex: search, $options: 'i' } },
-      { 'user.username': { $regex: search, $options: 'i' } }
-    ]
-  }
+}): Promise<ServiceResponse> => {
+  let teacherCourseIds: string[] | undefined
 
   if (role === UserRole.TEACHER) {
-    const teacherCourses = await CourseModel.find({ author: new Types.ObjectId(userId) }).select('_id')
-    filter.course = { $in: teacherCourses.map((c) => c._id) }
+    const teacherCourses = await findCoursesWithPagination({
+      authorId: userId,
+      limit: 1000
+    })
+    teacherCourseIds = teacherCourses.courses.map((c: any) => c.id)
   }
 
-  const skip = (page - 1) * limit
+  const orderStatus = status ? toPrismaOrderStatus(status) : undefined
 
   const [orders, total] = await Promise.all([
-    OrderModel.find(filter)
-      .populate('user', 'username email')
-      .populate('course', 'title price')
-      .populate('coupon', 'code value type')
-      .sort({ [sortBy]: -1 })
-      .skip(skip)
-      .limit(limit),
-    OrderModel.countDocuments(filter)
+    findOrdersWithFilter({
+      page: Number(page),
+      limit: Number(limit),
+      search: search ? String(search).trim() : undefined,
+      status: orderStatus,
+      sortBy: sortBy as any,
+      teacherCourseIds
+    }),
+    countOrdersWithFilter({
+      search: search ? String(search).trim() : undefined,
+      status: orderStatus,
+      teacherCourseIds
+    })
   ])
 
   return {
     success: true,
     message: 'Fetched orders successfully!',
     data: {
-      orders,
+      orders: orders.map(formatOrderResponse),
       pagination: {
-        page,
-        limit,
+        page: Number(page),
+        limit: Number(limit),
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / Number(limit)) || 1
       }
     }
   }

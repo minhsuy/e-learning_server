@@ -1,85 +1,203 @@
-import EnrollmentModel from '~/models/enrollment.model'
-import QuizSubmissionModel, { QuizSubmission } from '~/models/quizSubmission.model'
-import QuizModel from '~/models/quiz.model'
-import QuestionModel from '~/models/question.model'
-import { Types } from 'mongoose'
-import { ServiceResponse } from '~/types/type'
-import LessonModel from '~/models/lesson.model'
+import { PrismaTransactionClient } from '~/config/prisma'
+import {
+  findSubmissionDetailByQuizAndUser,
+  findSubmissionByQuizAndUser,
+  findSubmissionsByQuizId,
+  findSubmissionsForAnalytics,
+  createSubmissionWithAnswers,
+  SubmissionDetailPayload
+} from '~/repositories/quizSubmission.repository'
+import { findEnrollmentByUserAndCourse, countEnrollmentsByCourseId } from '~/repositories/enrollment.repository'
+import { findQuizById } from '~/repositories/quiz.repository'
+import { findQuestionsByQuizIdStudy } from '~/repositories/question.repository'
+import { findUserById } from '~/repositories/user.repository'
+import { findCourseById } from '~/repositories/course.repository'
 import { pushNotificationService } from './notification.service'
 import { ENotificationType } from '~/types/enum'
-import UserModel from '~/models/user.model'
+import { ServiceResponse } from '~/types/type'
+import { withCompatId } from '~/utils/uuid'
+import {
+  CreateQuizSubmissionInput,
+  QuizSubmissionDetailResponse,
+  SubmitQuizResultData,
+  TeacherQuizSubmissionItem,
+  TeacherQuizAnalytics
+} from '~/models/quizSubmission.model'
 
-export const submitQuizService = async ({
-  userId,
-  quizId,
-  answers
-}: {
-  userId: string
-  quizId: string
-  answers: { question: string; selectedAnswer: string }[]
-}): Promise<ServiceResponse> => {
-  const user = await UserModel.findById(userId).select('username')
-  if (!user) return { success: false, statusCode: 404, message: 'User not found' }
-  const quiz = await QuizModel.findById(quizId).populate<{ lesson: any }>('lesson')
-  if (!quiz) return { success: false, statusCode: 404, message: 'Quiz not found' }
+/**
+ * Format submission entity to preserve 100% backward compatibility with API contract:
+ * - Adds `_id` alias matching `id` via `withCompatId`
+ * - Exposes `quiz: submission.quizId`
+ * - Exposes `user: submission.userId`
+ * - Exposes answers array with compatible structure conforming to QuizSubmissionDetailResponse
+ */
+function formatSafeSubmission(sub: SubmissionDetailPayload): QuizSubmissionDetailResponse {
+  return {
+    ...withCompatId(sub),
+    quiz: sub.quizId,
+    user: sub.userId,
+    answers: sub.answers.map((a) => ({
+      ...withCompatId(a),
+      questionId: a.questionId,
+      question: a.question ? { ...withCompatId(a.question) } : a.questionId,
+      selectedAnswer: a.selectedAnswer,
+      isCorrect: a.isCorrect
+    }))
+  }
+}
 
-  const lesson = quiz.lesson
-  const enrollment = await EnrollmentModel.findOne({ user: userId, course: lesson.course })
-  if (!enrollment) return { success: false, statusCode: 403, message: 'You are not enrolled in this course' }
+/**
+ * Submit quiz answers and evaluate score:
+ * - Accepts strongly-typed CreateQuizSubmissionInput from Application Model
+ * - Verifies User exists
+ * - Verifies Quiz exists
+ * - Verifies User is enrolled in the Course
+ * - Enforces single submission policy: @@unique([quizId, userId])
+ * - Validates submitted questions belong to this Quiz (No foreign/duplicate questions)
+ * - Evaluates score strictly comparing question.answer === selectedAnswer
+ * - Persists QuizSubmission and QuizSubmissionAnswer[] atomically in PostgreSQL
+ * - Sends notification to course instructor (non-blocking)
+ */
+export const submitQuizService = async (
+  { userId, quizId, answers }: CreateQuizSubmissionInput,
+  tx?: PrismaTransactionClient
+): Promise<ServiceResponse<SubmitQuizResultData>> => {
+  // 1. Verify User exists
+  const user = await findUserById(userId, tx)
+  if (!user) {
+    return { success: false, statusCode: 404, message: 'User not found' }
+  }
 
-  const existing = await QuizSubmissionModel.findOne({ quiz: quizId, user: userId })
-  if (existing) return { success: false, statusCode: 400, message: 'You have already submitted this quiz' }
+  // 2. Verify Quiz exists
+  const quiz = await findQuizById(quizId, tx)
+  if (!quiz) {
+    return { success: false, statusCode: 404, message: 'Quiz not found' }
+  }
+
+  // 3. Verify Course enrollment
+  const targetCourseId = quiz.courseId
+  const enrollment = await findEnrollmentByUserAndCourse(userId, targetCourseId, tx)
+  if (!enrollment) {
+    return { success: false, statusCode: 403, message: 'You are not enrolled in this course' }
+  }
+
+  // 4. Verify Single Submission policy (pre-check)
+  const existing = await findSubmissionByQuizAndUser(quizId, userId, tx)
+  if (existing) {
+    return { success: false, statusCode: 400, message: 'You have already submitted this quiz' }
+  }
+
+  // 5. Fetch questions with answers for grading
+  const quizQuestions = await findQuestionsByQuizIdStudy(quizId, tx)
+  if (!quizQuestions || quizQuestions.length === 0) {
+    return { success: false, statusCode: 400, message: 'No questions found for this quiz' }
+  }
+
+  const questionMap = new Map(quizQuestions.map((q) => [q.id, q]))
+
+  // 6. Security check on submitted questions
+  const seenQuestionIds = new Set<string>()
+  for (const ans of answers) {
+    if (seenQuestionIds.has(ans.question)) {
+      return { success: false, statusCode: 400, message: 'Duplicate question submitted' }
+    }
+    seenQuestionIds.add(ans.question)
+    if (!questionMap.has(ans.question)) {
+      return { success: false, statusCode: 400, message: 'Question does not belong to this quiz' }
+    }
+  }
+
+  // 7. Calculate score & total points (Strict algorithm preservation)
+  let totalPoints = 0
+  for (const q of quizQuestions) {
+    totalPoints += q.points || 1
+  }
 
   let score = 0
-  let totalPoints = 0
-  for (const question of quiz.questions) {
-    const q = await QuestionModel.findById(question)
-    if (q) {
-      totalPoints += q.points || 1
-    }
-  }
+  const submissionAnswers: Array<{
+    questionId: string
+    selectedAnswer: string
+    isCorrect: boolean
+  }> = []
   for (const ans of answers) {
-    const question = await QuestionModel.findById(ans.question)
-    if (question && question.answer === ans.selectedAnswer) {
+    const question = questionMap.get(ans.question)
+    const isCorrect = question ? question.answer === ans.selectedAnswer : false
+    if (isCorrect && question) {
       score += question.points || 1
     }
+    submissionAnswers.push({
+      questionId: ans.question,
+      selectedAnswer: String(ans.selectedAnswer),
+      isCorrect
+    })
   }
+
   const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0
 
-  const submission = await QuizSubmissionModel.create({
-    quiz: new Types.ObjectId(quizId),
-    user: new Types.ObjectId(userId),
-    answers: answers.map((a) => ({ question: new Types.ObjectId(a.question), selectedAnswer: a.selectedAnswer })),
-    score,
-    totalPoints,
-    percentage,
-    completedAt: new Date()
-  })
-  const lessonDoc = await LessonModel.findById(lesson._id).populate<{ course: any }>('course', 'author')
-  const teacherId = lessonDoc?.course?.author.toString()
-  if (teacherId && teacherId !== userId) {
-    await pushNotificationService({
-      senderId: userId,
-      receiverId: teacherId,
-      type: ENotificationType.QUIZ,
-      message: `Học viên ${user.username}  vừa hoàn thành quiz "${quiz.title}"`,
-      relatedId: submission._id.toString()
-    })
+  // 8. Atomically persist submission and answers in PostgreSQL
+  let submission: SubmissionDetailPayload
+  try {
+    submission = await createSubmissionWithAnswers(
+      {
+        quizId,
+        userId,
+        score,
+        totalPoints,
+        percentage,
+        completedAt: new Date(),
+        answers: submissionAnswers
+      },
+      tx
+    )
+  } catch (err: unknown) {
+    // Handle concurrent submission race conditions via code inspection
+    if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'P2002') {
+      return { success: false, statusCode: 400, message: 'You have already submitted this quiz' }
+    }
+    throw err
+  }
+
+  // 9. Non-blocking Notification to Instructor
+  try {
+    const courseDoc = await findCourseById(targetCourseId, tx)
+    const teacherId = courseDoc?.authorId
+    if (teacherId && teacherId !== userId) {
+      await pushNotificationService({
+        senderId: userId,
+        receiverId: teacherId,
+        type: ENotificationType.QUIZ,
+        message: `Học viên ${user.username}  vừa hoàn thành quiz "${quiz.title}"`,
+        relatedId: submission.id
+      })
+    }
+  } catch (notifErr: unknown) {
+    // Non-blocking notification logging (Notification module will be migrated in Phase 10)
+    const errorMessage = notifErr instanceof Error ? notifErr.message : String(notifErr)
+    console.warn(`[Non-blocking] pushNotification skipped (${errorMessage})`)
   }
 
   return {
     success: true,
     message: 'Quiz submitted successfully',
-    data: { submission, scoreDisplay: `${score}/${totalPoints}`, percentage }
+    data: {
+      submission: formatSafeSubmission(submission),
+      scoreDisplay: `${score}/${totalPoints}`,
+      percentage
+    }
   }
 }
 
-// get quiz submission result for a specific user
-export const getQuizSubmissionService = async (quizId: string, userId: string): Promise<ServiceResponse> => {
-  const submission = await QuizSubmissionModel.findOne({
-    quiz: quizId,
-    user: userId
-  }).populate<{ answers: { question: any; selectedAnswer: string }[] }>('answers.question')
+/**
+ * Get quiz submission result for a specific student:
+ * - Queries PostgreSQL by composite key [quizId, userId]
+ * - Returns detailed answers conforming to QuizSubmissionDetailResponse
+ */
+export const getQuizSubmissionService = async (
+  quizId: string,
+  userId: string,
+  tx?: PrismaTransactionClient
+): Promise<ServiceResponse<{ submission: QuizSubmissionDetailResponse }>> => {
+  const submission = await findSubmissionDetailByQuizAndUser(quizId, userId, tx)
 
   if (!submission) {
     return {
@@ -93,18 +211,21 @@ export const getQuizSubmissionService = async (quizId: string, userId: string): 
     success: true,
     message: 'Quiz submission fetched successfully',
     data: {
-      submission
+      submission: formatSafeSubmission(submission)
     }
   }
 }
 
-// get all quiz for teacher
-export const getAllQuizSubmissionsService = async (quizId: string): Promise<ServiceResponse> => {
-  // Lấy tất cả submissions của quizId này
-  const submissions = await QuizSubmissionModel.find({ quiz: quizId })
-    .populate<{ user: any }>('user', 'username')
-    .populate<{ quiz: any }>('quiz', 'title')
-    .populate<{ answers: { question: any; selectedAnswer: string }[] }>('answers.question', 'title')
+/**
+ * Get all submissions for a quiz (Teacher view):
+ * - Returns list of submissions with user, score, totalPoints, percentage, completedAt
+ * - Conforms to TeacherQuizSubmissionItem[]
+ */
+export const getAllQuizSubmissionsService = async (
+  quizId: string,
+  tx?: PrismaTransactionClient
+): Promise<ServiceResponse<TeacherQuizSubmissionItem[]>> => {
+  const submissions = await findSubmissionsByQuizId(quizId, tx)
 
   if (!submissions || submissions.length === 0) {
     return {
@@ -114,12 +235,12 @@ export const getAllQuizSubmissionsService = async (quizId: string): Promise<Serv
     }
   }
 
-  const submissionResults = submissions.map((submission) => ({
-    user: submission.user.username,
-    score: submission.score,
-    totalPoints: submission.totalPoints,
-    percentage: submission.percentage,
-    completedAt: submission.completedAt
+  const submissionResults: TeacherQuizSubmissionItem[] = submissions.map((sub) => ({
+    user: sub.user?.username || '',
+    score: sub.score,
+    totalPoints: sub.totalPoints,
+    percentage: sub.percentage,
+    completedAt: sub.completedAt
   }))
 
   return {
@@ -129,11 +250,25 @@ export const getAllQuizSubmissionsService = async (quizId: string): Promise<Serv
   }
 }
 
-// get quiz analysis
-export const getQuizAnalyticsService = async (quizId: string): Promise<ServiceResponse> => {
-  // Lấy tất cả submissions của quizId này
-  const submissions = await QuizSubmissionModel.find({ quiz: quizId })
+/**
+ * Get quiz analytics (Teacher view):
+ * - Calculates totalStudents, avgScore, minScore, maxScore, completionRate
+ * - Conforms to TeacherQuizAnalytics
+ */
+export const getQuizAnalyticsService = async (
+  quizId: string,
+  tx?: PrismaTransactionClient
+): Promise<ServiceResponse<TeacherQuizAnalytics>> => {
+  const quiz = await findQuizById(quizId, tx)
+  if (!quiz) {
+    return {
+      success: false,
+      statusCode: 404,
+      message: 'No submissions found for this quiz'
+    }
+  }
 
+  const submissions = await findSubmissionsForAnalytics(quizId, tx)
   if (!submissions || submissions.length === 0) {
     return {
       success: false,
@@ -142,44 +277,37 @@ export const getQuizAnalyticsService = async (quizId: string): Promise<ServiceRe
     }
   }
 
-  const quiz = await QuizModel.findById(quizId).populate<{ lesson: any }>('lesson')
-
-  const totalStudents = await EnrollmentModel.countDocuments({
-    course: quiz && quiz.lesson.course
-  })
+  const totalStudents = await countEnrollmentsByCourseId(quiz.courseId, tx)
 
   let completedCount = 0
-  submissions.forEach((submission) => {
-    if (submission.completedAt) {
-      completedCount += 1
-    }
-  })
-
   let totalScore = 0
   let minScore = Infinity
   let maxScore = -Infinity
 
-  submissions.forEach((submission) => {
-    const score = submission.score
+  for (const sub of submissions) {
+    if (sub.completedAt) {
+      completedCount += 1
+    }
+    const score = sub.score
     totalScore += score
-
     if (score < minScore) minScore = score
     if (score > maxScore) maxScore = score
-  })
+  }
 
   const avgScore = totalScore / submissions.length
+  const completionRate = totalStudents > 0 ? (completedCount / totalStudents) * 100 : 0
 
-  const completionRate = (completedCount / totalStudents) * 100
+  const analyticsData: TeacherQuizAnalytics = {
+    totalStudents,
+    avgScore,
+    minScore,
+    maxScore,
+    completionRate
+  }
 
   return {
     success: true,
     message: 'Quiz analytics fetched successfully',
-    data: {
-      totalStudents,
-      avgScore,
-      minScore,
-      maxScore,
-      completionRate
-    }
+    data: analyticsData
   }
 }

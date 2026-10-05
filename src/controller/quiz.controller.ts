@@ -18,7 +18,7 @@ export const createQuizController = asyncHandler(async (req: Request, res: Respo
 
 // update quiz
 export const updateQuizController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { quizId } = req.params
+  const quizId = Array.isArray(req.params.quizId) ? req.params.quizId[0] : req.params.quizId
   const { userId, role } = req.user as { userId: string; role: string }
 
   const payload = req.body
@@ -29,14 +29,14 @@ export const updateQuizController = asyncHandler(async (req: Request, res: Respo
 // delete quiz
 export const deleteQuizController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { userId, role } = req.user as { userId: string; role: string }
-  const { quizId } = req.params
+  const quizId = Array.isArray(req.params.quizId) ? req.params.quizId[0] : req.params.quizId
   const result = await deleteQuizService({ quizId, userId, role })
   return res.status(result.success ? 200 : result.statusCode || 400).json(result)
 })
 
 // get quiz for lesson :
 export const getQuizzesByLessonController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { lessonId } = req.params
+  const lessonId = Array.isArray(req.params.lessonId) ? req.params.lessonId[0] : req.params.lessonId
 
   const result = await getQuizzesByLessonService(lessonId)
 

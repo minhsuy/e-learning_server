@@ -1,93 +1,160 @@
 import bcrypt from 'bcryptjs'
-import { FilterQuery, Types } from 'mongoose'
-import CourseModel from '~/models/course.model'
-import UserModel, { User } from '~/models/user.model'
+import { CourseLevel as PrismaCourseLevel, CourseStatus as PrismaCourseStatus, CourseType as PrismaCourseType, Prisma, UserRole as PrismaUserRole, UserStatus as PrismaUserStatus } from '@prisma/client'
+import { PrismaTransactionClient } from '~/config/prisma'
+import { createTeacherPayloadSchema } from '~/models/user.model'
+import {
+  COURSE_ADMIN_SELECT,
+  CourseAdminPayload,
+  findCourseById as findCourseByIdRepo,
+  findCoursesWithPagination as findCoursesWithPaginationRepo,
+  softDeleteCourse,
+  updateCourse as updateCourseRepo,
+  updateCourseStatus
+} from '~/repositories/course.repository'
+import {
+  addUser,
+  countAdminsExcluding,
+  deleteUser,
+  findUserById,
+  findUserConflict,
+  findUsersWithPagination,
+  isUsernameTaken,
+  updateUser,
+  USER_ADMIN_SELECT
+} from '~/repositories/user.repository'
 import { CourseStatus, ENotificationType, UserRole, UserStatus } from '~/types/enum'
 import { GetAllUsersParams, ICreateTeacherInput, ListQuery } from '~/types/type'
+import { isValidUUID, withCompatId } from '~/utils/uuid'
+import { formatSafeCourse, toPrismaCourseLevel, toPrismaCourseStatus, toPrismaCourseType } from './course.service'
 import { pushNotificationService } from './notification.service'
 
-// get all users
-export const getAllUsersService = async (params: GetAllUsersParams) => {
+function isLegacyObjectId(id: string): boolean {
+  return /^[0-9a-fA-F]{24}$/.test(id)
+}
+
+// Helper to map role string to Prisma enum
+function toPrismaRole(role?: string): PrismaUserRole | undefined {
+  if (!role) return undefined
+  const upper = role.toUpperCase()
+  if (upper === 'ADMIN') return PrismaUserRole.ADMIN
+  if (upper === 'TEACHER') return PrismaUserRole.TEACHER
+  if (upper === 'USER') return PrismaUserRole.USER
+  return undefined
+}
+
+// Helper to map status string to Prisma enum
+function toPrismaStatus(status?: string): PrismaUserStatus | undefined {
+  if (!status) return undefined
+  const upper = status.toUpperCase()
+  if (upper === 'ACTIVE') return PrismaUserStatus.ACTIVE
+  if (upper === 'INACTIVE' || upper === 'BLOCKED') return PrismaUserStatus.INACTIVE
+  return undefined
+}
+
+// GET ALL USERS (ADMIN)
+export const getAllUsersService = async (params: GetAllUsersParams, tx?: PrismaTransactionClient) => {
   const { page = 1, limit = 10, role, status, search, sortBy = 'createdAt' } = params
 
-  const filter: FilterQuery<typeof UserModel> = {
-    isVerified: ''
-  }
+  const prismaRole = toPrismaRole(role)
+  const prismaStatus = toPrismaStatus(status)
 
-  if (role) filter.role = role
-  if (status) filter.status = status
-  if (search) {
-    filter.$or = [{ username: { $regex: search, $options: 'i' } }, { email: { $regex: search, $options: 'i' } }]
-  }
+  const { users, total, page: pageNum, limit: limitNum, totalPages } = await findUsersWithPagination(
+    {
+      page: Number(page),
+      limit: Number(limit),
+      search: search ? String(search) : undefined,
+      role: prismaRole,
+      status: prismaStatus,
+      sortBy: String(sortBy),
+      sortOrder: 'desc',
+      select: USER_ADMIN_SELECT
+    },
+    tx
+  )
 
-  const skip = (page - 1) * limit
-
-  const [users, total] = await Promise.all([
-    UserModel.find(filter)
-      .select('-password -refresh_token -reset_password_token -reset_password_expires -isVerified -favorites')
-      .sort({ [sortBy]: -1 })
-      .skip(skip)
-      .limit(limit),
-    UserModel.countDocuments(filter)
-  ])
+  const formattedUsers = users.map((u) => {
+    const userWithSocial = {
+      id: u.id,
+      username: u.username,
+      email: u.email,
+      role: (u.role || 'USER').toLowerCase(),
+      status: (u.status || 'ACTIVE').toLowerCase(),
+      avatar: u.avatar || '',
+      phone: u.phone || '',
+      bio: u.bio || '',
+      socialLinks: {
+        facebook: u.socialFacebook || '',
+        instagram: u.socialInstagram || '',
+        github: u.socialGithub || ''
+      },
+      createdAt: u.createdAt
+    }
+    return withCompatId(userWithSocial)
+  })
 
   return {
     success: true,
     message: 'Fetched users successfully !',
     data: {
-      users,
+      users: formattedUsers,
       pagination: {
-        page,
-        limit,
+        page: pageNum,
+        limit: limitNum,
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages
       }
     }
   }
 }
 
-// get user detail
-export const getUserDetailService = async ({ id }: { id: string }) => {
-  const user = await UserModel.findById(id).select(
-    '-password -refresh_token -reset_password_token -reset_password_expires -isVerified -favorites'
-  )
-
-  if (!user) {
-    return { success: false, message: 'User not found' }
-  }
-
-  return { success: true, message: 'Get user info successfully !', data: user }
-}
-
-// update
-export const updateUserByAdminService = async ({ id, payload }: { id: string; payload: Record<string, any> }) => {
-  if (!Types.ObjectId.isValid(id)) {
+// GET USER DETAIL (ADMIN & PUBLIC PROFILE)
+export const getUserDetailService = async ({ id }: { id: string }, tx?: PrismaTransactionClient) => {
+  if (!isValidUUID(id)) {
     return { success: false, statusCode: 400, message: 'Invalid user id' }
   }
 
-  const user = await UserModel.findById(id)
+  const user = await findUserById(id, { select: USER_ADMIN_SELECT }, tx)
+
   if (!user) {
     return { success: false, statusCode: 404, message: 'User not found' }
   }
 
-  const allowedFields = ['username', 'role', 'status', 'phone', 'bio', 'avatar', 'socialLinks']
-  const updateData: Record<string, any> = {}
-
-  for (const key of allowedFields) {
-    if (typeof payload[key] !== 'undefined' && payload[key] !== null) {
-      if (key === 'socialLinks' && typeof payload.socialLinks === 'object') {
-        updateData.socialLinks = {
-          ...user.socialLinks,
-          ...payload.socialLinks
-        }
-      } else {
-        updateData[key] = payload[key]
-      }
-    }
+  const safeUser = {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: (user.role || 'USER').toLowerCase(),
+    status: (user.status || 'ACTIVE').toLowerCase(),
+    avatar: user.avatar || '',
+    phone: user.phone || '',
+    bio: user.bio || '',
+    socialLinks: {
+      facebook: user.socialFacebook || '',
+      instagram: user.socialInstagram || '',
+      github: user.socialGithub || ''
+    },
+    createdAt: user.createdAt
   }
 
-  if (updateData.username) {
-    const exists = await UserModel.findOne({ username: updateData.username, _id: { $ne: id } })
+  return { success: true, message: 'Get user info successfully !', data: withCompatId(safeUser) }
+}
+
+// UPDATE USER BY ADMIN
+export const updateUserByAdminService = async (
+  { id, payload }: { id: string; payload: Record<string, any> },
+  tx?: PrismaTransactionClient
+) => {
+  if (!isValidUUID(id)) {
+    return { success: false, statusCode: 400, message: 'Invalid user id' }
+  }
+
+  const user = await findUserById(id, undefined, tx)
+  if (!user) {
+    return { success: false, statusCode: 404, message: 'User not found' }
+  }
+
+  if (payload.username && payload.username.trim() !== user.username) {
+    const exists = await isUsernameTaken(payload.username.trim(), id, tx)
     if (exists) {
       return {
         success: false,
@@ -98,29 +165,69 @@ export const updateUserByAdminService = async ({ id, payload }: { id: string; pa
     }
   }
 
-  const updated = await UserModel.findByIdAndUpdate(id, { $set: updateData }, { new: true }).select(
-    '-password -refresh_token -reset_password_token -reset_password_expires'
-  )
+  const updateData: Prisma.UserUpdateInput = {}
+
+  if (payload.username) updateData.username = payload.username.trim()
+  if (payload.role) {
+    const r = toPrismaRole(payload.role)
+    if (r) updateData.role = r
+  }
+  if (payload.status) {
+    const s = toPrismaStatus(payload.status)
+    if (s) updateData.status = s
+  }
+  if (payload.phone !== undefined) updateData.phone = payload.phone
+  if (payload.bio !== undefined) updateData.bio = payload.bio
+  if (payload.avatar !== undefined) updateData.avatar = payload.avatar
+
+  if (payload.socialLinks && typeof payload.socialLinks === 'object') {
+    if (payload.socialLinks.facebook !== undefined) updateData.socialFacebook = payload.socialLinks.facebook
+    if (payload.socialLinks.instagram !== undefined) updateData.socialInstagram = payload.socialLinks.instagram
+    if (payload.socialLinks.github !== undefined) updateData.socialGithub = payload.socialLinks.github
+  }
+
+  const updated = await updateUser(id, updateData, tx)
+
+  const safeUpdated = {
+    id: updated.id,
+    username: updated.username,
+    email: updated.email,
+    role: (updated.role || 'USER').toLowerCase(),
+    status: (updated.status || 'ACTIVE').toLowerCase(),
+    avatar: updated.avatar || '',
+    phone: updated.phone || '',
+    bio: updated.bio || '',
+    socialLinks: {
+      facebook: updated.socialFacebook || '',
+      instagram: updated.socialInstagram || '',
+      github: updated.socialGithub || ''
+    },
+    createdAt: updated.createdAt,
+    updatedAt: updated.updatedAt
+  }
 
   return {
     success: true,
     message: 'User updated successfully',
-    data: updated
+    data: withCompatId(safeUpdated)
   }
 }
 
-// delete user
-export const deleteUserByAdminService = async ({ id, performedBy }: { id: string; performedBy?: string }) => {
-  if (!Types.ObjectId.isValid(id)) {
+// DELETE USER BY ADMIN
+export const deleteUserByAdminService = async (
+  { id, performedBy }: { id: string; performedBy?: string },
+  tx?: PrismaTransactionClient
+) => {
+  if (!isValidUUID(id)) {
     return { success: false, statusCode: 400, message: 'Invalid user id' }
   }
 
-  const user = await UserModel.findById(id).select('_id role')
+  const user = await findUserById(id, { select: { id: true, role: true } }, tx)
   if (!user) {
     return { success: false, statusCode: 404, message: 'User not found' }
   }
 
-  if (performedBy && String(user._id) === String(performedBy)) {
+  if (performedBy && user.id === performedBy) {
     return {
       success: false,
       statusCode: 400,
@@ -129,135 +236,155 @@ export const deleteUserByAdminService = async ({ id, performedBy }: { id: string
     }
   }
 
-  if (user.role === UserRole.ADMIN) {
-    const remainingAdmins = await UserModel.countDocuments({ role: UserRole.ADMIN, _id: { $ne: id } })
+  if (user.role === PrismaUserRole.ADMIN) {
+    const remainingAdmins = await countAdminsExcluding(id, tx)
     if (remainingAdmins === 0) {
       return { success: false, statusCode: 409, errorCode: 'LAST_ADMIN', message: 'Cannot delete the last admin' }
     }
   }
 
-  await UserModel.findByIdAndDelete(id)
+  await deleteUser(id, tx)
 
   return { success: true, message: 'User deleted successfully' }
 }
 
-// add teacher
+// CREATE TEACHER (ADMIN)
+export const createTeacherService = async ({ payload }: ICreateTeacherInput, tx?: PrismaTransactionClient) => {
+  const parseResult = createTeacherPayloadSchema.safeParse(payload)
+  if (!parseResult.success) {
+    return {
+      success: false,
+      statusCode: 400,
+      message: 'Invalid teacher input data',
+      errors: parseResult.error.flatten().fieldErrors
+    }
+  }
 
-export const createTeacherService = async ({ payload }: ICreateTeacherInput) => {
-  const { username, email, password, avatar, phone, bio, socialLinks } = payload
+  const { username, email, password, avatar, phone, bio, socialLinks } = parseResult.data
 
-  // Check trùng email/username
-  const conflict = await UserModel.findOne({
-    $or: [{ email }, { username }]
-  }).select('_id email username')
+  const { emailConflict, usernameConflict } = await findUserConflict({ email, username }, tx)
 
-  if (conflict) {
-    const isEmail = conflict.email === email
+  if (emailConflict || usernameConflict) {
     return {
       success: false,
       statusCode: 409,
-      errorCode: isEmail ? 'EMAIL_CONFLICT' : 'USERNAME_CONFLICT',
-      message: isEmail ? 'Email is already in use' : 'Username is already in use'
+      errorCode: emailConflict ? 'EMAIL_CONFLICT' : 'USERNAME_CONFLICT',
+      message: emailConflict ? 'Email is already in use' : 'Username is already in use'
     }
   }
 
   const hashed = await bcrypt.hash(password, 10)
 
-  const doc = await UserModel.create({
-    username,
-    email,
-    password: hashed,
-    avatar: avatar || '',
-    phone: phone || '',
-    bio: bio || '',
-    socialLinks: {
-      facebook: socialLinks?.facebook || '',
-      instagram: socialLinks?.instagram || '',
-      github: socialLinks?.github || ''
+  const newUser = await addUser(
+    {
+      username,
+      email,
+      password: hashed,
+      avatar: avatar || '',
+      phone: phone || null,
+      bio: bio || null,
+      socialFacebook: socialLinks?.facebook || '',
+      socialInstagram: socialLinks?.instagram || '',
+      socialGithub: socialLinks?.github || '',
+      role: PrismaUserRole.TEACHER,
+      status: PrismaUserStatus.ACTIVE,
+      isVerified: true
     },
-    role: UserRole.TEACHER,
-    status: UserStatus.ACTIVE,
-    isVerified: ''
-  })
+    tx
+  )
 
-  const {
-    password: _pw,
-    refresh_token,
-    reset_password_token,
-    reset_password_expires,
-    isVerified,
-    ...safe
-  } = doc.toObject()
+  const safe = {
+    id: newUser.id,
+    username: newUser.username,
+    email: newUser.email,
+    avatar: newUser.avatar,
+    phone: newUser.phone || '',
+    bio: newUser.bio || '',
+    socialLinks: {
+      facebook: newUser.socialFacebook || '',
+      instagram: newUser.socialInstagram || '',
+      github: newUser.socialGithub || ''
+    },
+    role: 'teacher',
+    status: 'active',
+    createdAt: newUser.createdAt,
+    updatedAt: newUser.updatedAt
+  }
 
   return {
     success: true,
     message: 'Teacher created successfully',
-    data: safe
+    data: withCompatId(safe)
   }
 }
 
-// -------- COURSE ---------
+// -------- COURSE (ADMIN) ---------
 
-export const updateCourseByAdminService = async ({
-  courseId,
-  payload
-}: {
-  courseId: string
-  payload: Record<string, any>
-}) => {
-  if (!Types.ObjectId.isValid(courseId)) {
+export const updateCourseByAdminService = async (
+  {
+    courseId,
+    payload
+  }: {
+    courseId: string
+    payload: Record<string, any>
+  },
+  tx?: PrismaTransactionClient
+) => {
+  if (!courseId || (!isValidUUID(courseId) && !isLegacyObjectId(courseId))) {
     return { success: false, statusCode: 400, message: 'Invalid course ID' }
   }
-  const course = await CourseModel.findById(courseId)
+
+  const course = await findCourseByIdRepo(courseId, tx)
   if (!course) {
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
-  if (payload.title) course.title = payload.title
-  if (payload.description) course.description = payload.description
-  if (payload.image) course.image = payload.image
-  if (payload.intro_url) course.intro_url = payload.intro_url
-  if (payload.category) course.category = payload.category
-  if (payload.type) course.type = payload.type
-  if (payload.price !== undefined) course.price = payload.price
-  if (payload.old_price !== undefined) course.old_price = payload.old_price
-  if (payload.level) course.level = payload.level
-  if (payload.view !== undefined) course.view = payload.view
-  if (payload.sold !== undefined) course.sold = payload.sold
-  if (payload.status !== undefined) course.status = payload.status
-  if (payload._destroy !== undefined) course._destroy = payload._destroy
+  const updateData: Prisma.CourseUpdateInput = {}
+  if (payload.title) updateData.title = payload.title
+  if (payload.description !== undefined) updateData.description = payload.description
+  if (payload.image !== undefined) updateData.image = payload.image
+  if (payload.intro_url !== undefined) updateData.introUrl = payload.intro_url
+  if (payload.category !== undefined) {
+    updateData.category = payload.category && isValidUUID(payload.category)
+      ? { connect: { id: payload.category } }
+      : { disconnect: true }
+  }
+  if (payload.type !== undefined) updateData.type = toPrismaCourseType(payload.type)
+  if (payload.price !== undefined) updateData.price = Number(payload.price)
+  if (payload.old_price !== undefined) updateData.oldPrice = Number(payload.old_price)
+  if (payload.level !== undefined) updateData.level = toPrismaCourseLevel(payload.level)
+  if (payload.view !== undefined) updateData.view = Number(payload.view)
+  if (payload.sold !== undefined) updateData.sold = Number(payload.sold)
+  if (payload.status !== undefined) updateData.status = toPrismaCourseStatus(payload.status)
+  if (payload._destroy !== undefined) updateData.isDestroyed = Boolean(payload._destroy)
   if (payload.info) {
-    course.info = {
-      ...course.info,
-      ...payload.info
-    }
+    if (Array.isArray(payload.info.requirements)) updateData.requirements = payload.info.requirements
+    if (Array.isArray(payload.info.benefits)) updateData.benefits = payload.info.benefits
+    if (Array.isArray(payload.info.techniques)) updateData.techniques = payload.info.techniques
+    if (Array.isArray(payload.info.documents)) updateData.documents = payload.info.documents
   }
 
-  await course.save()
+  const updated = await updateCourseRepo(courseId, updateData, tx)
 
   return {
     success: true,
     message: 'Course updated successfully (by admin)!',
-    data: course
+    data: formatSafeCourse(updated)
   }
 }
 
-// delete course by admin
-
-export const deleteCourseByAdminService = async ({ courseId }: { courseId: string }) => {
-  if (!Types.ObjectId.isValid(courseId)) {
+// delete course by admin (soft-delete)
+export const deleteCourseByAdminService = async ({ courseId }: { courseId: string }, tx?: PrismaTransactionClient) => {
+  if (!courseId || (!isValidUUID(courseId) && !isLegacyObjectId(courseId))) {
     return { success: false, statusCode: 400, message: 'Invalid course ID' }
   }
 
-  const course = await CourseModel.findById(courseId)
-
+  const course = await findCourseByIdRepo(courseId, tx)
   if (!course) {
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
-  // Soft delete
-  course._destroy = true
-  await course.save()
+  await softDeleteCourse(courseId, tx)
 
   return {
     success: true,
@@ -266,8 +393,7 @@ export const deleteCourseByAdminService = async ({ courseId }: { courseId: strin
 }
 
 // get course by admin
-
-export const getCoursesByAdminService = async ({ params }: { params: ListQuery }) => {
+export const getCoursesByAdminService = async ({ params }: { params: ListQuery }, tx?: PrismaTransactionClient) => {
   const {
     page = 1,
     limit = 10,
@@ -283,95 +409,92 @@ export const getCoursesByAdminService = async ({ params }: { params: ListQuery }
     _destroy
   } = params
 
-  const filter: FilterQuery<typeof CourseModel> = {}
-
-  if (search) {
-    filter.$or = [{ title: { $regex: search, $options: 'i' } }]
-  }
-
-  if (category) filter.category = category
-  if (level) filter.level = level
-  if (type) filter.type = type
-  if (status) filter.status = status
-  if (author) filter.author = author
-  if (_destroy !== undefined) filter._destroy = _destroy
-
-  if (priceMin || priceMax) {
-    filter.price = {}
-    if (priceMin) (filter.price as any).$gte = Number(priceMin)
-    if (priceMax) (filter.price as any).$lte = Number(priceMax)
-  }
-
-  const skip = (page - 1) * limit
-
-  const [courses, total] = await Promise.all([
-    CourseModel.find(filter)
-      .select('title slug status image price old_price level type sold view createdAt updatedAt _destroy')
-      .populate({ path: 'author', select: '_id username email avatar role' })
-      .sort({ [sortBy]: -1 })
-      .skip(skip)
-      .limit(limit),
-    CourseModel.countDocuments(filter)
-  ])
+  const result = await findCoursesWithPaginationRepo<CourseAdminPayload>(
+    {
+      page: Number(page),
+      limit: Number(limit),
+      search: search ? String(search) : undefined,
+      categoryId: category ? String(category) : undefined,
+      level: level ? toPrismaCourseLevel(level as string) : undefined,
+      type: type ? toPrismaCourseType(type as string) : undefined,
+      status: status ? toPrismaCourseStatus(status as string) : undefined,
+      authorId: author ? String(author) : undefined,
+      isDestroyed: _destroy !== undefined ? Boolean(_destroy) : undefined,
+      priceMin: priceMin !== undefined ? Number(priceMin) : undefined,
+      priceMax: priceMax !== undefined ? Number(priceMax) : undefined,
+      sortBy: sortBy as string,
+      select: COURSE_ADMIN_SELECT
+    },
+    tx
+  )
 
   return {
     success: true,
     message: 'Fetched all courses successfully!',
     data: {
-      courses,
+      courses: result.courses.map((c) => ({
+        ...withCompatId(c),
+        price: Number(c.price),
+        old_price: Number(c.oldPrice),
+        oldPrice: Number(c.oldPrice),
+        author: c.author ? withCompatId(c.author) : null,
+        category: c.category ? withCompatId(c.category) : null,
+        _destroy: c.isDestroyed
+      })),
       pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages
       }
     }
   }
 }
 
-// update status course for teacher :
-
-export const updateCourseStatusForTeacherService = async ({
-  courseId,
-  payload
-}: {
-  courseId: string
-  payload: Record<string, any>
-}) => {
-  if (!Types.ObjectId.isValid(courseId)) {
+// update status course for teacher
+export const updateCourseStatusForTeacherService = async (
+  {
+    courseId,
+    payload
+  }: {
+    courseId: string
+    payload: Record<string, any>
+  },
+  tx?: PrismaTransactionClient
+) => {
+  if (!courseId || (!isValidUUID(courseId) && !isLegacyObjectId(courseId))) {
     return { success: false, statusCode: 400, message: 'Invalid course ID' }
   }
 
-  const course = await CourseModel.findById(courseId).populate<{ author: User }>('author', 'username')
-
+  const course = await findCourseByIdRepo(courseId, tx)
   if (!course) {
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
   const previousStatus = course.status
+  const targetStatus = payload.status !== undefined ? toPrismaCourseStatus(payload.status) : previousStatus
 
-  if (payload.status !== undefined) {
-    course.status = payload.status
-  }
+  const updated = await updateCourseStatus(courseId, targetStatus, tx)
 
-  await course.save()
+  if (previousStatus !== PrismaCourseStatus.APPROVED && targetStatus === PrismaCourseStatus.APPROVED) {
+    const teacherId = course.authorId
 
-  if (previousStatus !== CourseStatus.APPROVED && course.status === CourseStatus.APPROVED) {
-    const teacherId = course.author._id.toString()
-    const teacherName = course.author.username
-
-    await pushNotificationService({
-      senderId: null,
-      receiverId: teacherId,
-      type: ENotificationType.COURSE,
-      message: `Khóa học "${course.title}" của bạn đã được admin duyệt!`,
-      relatedId: course._id.toString()
-    })
+    try {
+      await pushNotificationService({
+        senderId: null,
+        receiverId: teacherId,
+        type: ENotificationType.COURSE,
+        message: `Khóa học "${course.title}" của bạn đã được admin duyệt!`,
+        relatedId: course.id
+      })
+    } catch {
+      // Non-blocking notification dispatch
+    }
   }
 
   return {
     success: true,
     message: 'Course updated successfully (by teacher/admin)!',
-    data: course
+    data: formatSafeCourse(updated)
   }
 }

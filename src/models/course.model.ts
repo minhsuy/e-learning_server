@@ -1,146 +1,171 @@
-import { model, Schema } from 'mongoose'
-import { CourseLevel, CourseStatus, CourseType } from '~/types/enum'
+import { z } from 'zod'
+import { CourseLevel, CourseStatus, CourseType } from '@prisma/client'
+import { userCompactSchema } from './user.model'
 
-export interface Course extends Document {
-  _id: Schema.Types.ObjectId
-  title: string
-  image: string
-  intro_url: string
-  description: string
-  category: Schema.Types.ObjectId
-  price: number
-  old_price: number
-  slug: string
-  type: CourseType
-  status: CourseStatus
-  level: CourseLevel
-  view: number
-  sold: number
-  info: {
-    requirements: string[]
-    benefits: string[]
-    qa: {
-      question: string
-      answer: string
-    }[]
-  }
-  chapters: Schema.Types.ObjectId[]
-  author: Schema.Types.ObjectId
-  rating: Schema.Types.ObjectId[]
-  _destroy: boolean
-}
+/**
+ * TMDEMY — ZOD APPLICATION DOMAIN MODEL: COURSE
+ * 
+ * Single Source of Truth for Course domain validation and types at Application Layer.
+ * Conforms to ADR docs/architecture/application-model-design.md
+ * 
+ * Physical Database constraints: prisma/schema.prisma
+ * Legacy Mongoose Model: src/models/legacy/course.legacy.model.ts
+ */
 
-const courseSchema = new Schema<Course>(
-  {
-    title: {
-      type: String,
-      required: true
-    },
-    slug: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true
-    },
-    image: {
-      type: String,
-      default: ''
-    },
-    intro_url: {
-      type: String,
-      default: ''
-    },
-    description: {
-      type: String,
-      default: ''
-    },
-    price: {
-      type: Number,
-      default: 0,
-      min: 0
-    },
-    old_price: {
-      type: Number,
-      default: 0,
-      min: 0
-    },
-    type: {
-      type: String,
-      enum: Object.values(CourseType),
-      default: CourseType.PAID
-    },
-    status: {
-      type: String,
-      enum: Object.values(CourseStatus),
-      default: CourseStatus.PENDING
-    },
-    author: {
-      type: Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    chapters: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Chapter'
-      }
-    ],
-    category: {
-      type: Schema.Types.ObjectId,
-      ref: 'Category'
-    },
-    rating: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Rating'
-      }
-    ],
-    view: {
-      type: Number,
-      default: 0
-    },
-    sold: {
-      type: Number,
-      default: 0
-    },
-    info: {
-      requirements: {
-        type: [String]
-      },
-      benefits: {
-        type: [String]
-      },
-      techniques: {
-        type: [String]
-      },
-      documents: {
-        type: [String]
-      },
-      qa: [
-        {
-          question: {
-            type: String
-          },
-          answer: {
-            type: String
-          }
-        }
-      ]
-    },
-    level: {
-      type: String,
-      enum: Object.values(CourseLevel),
-      default: CourseLevel.BEGINNER
-    },
-    _destroy: {
-      type: Boolean,
-      default: false
-    }
-  },
-  {
-    timestamps: true
-  }
-)
+// ==========================================
+// 1. NESTED / VALUE OBJECT SCHEMAS
+// ==========================================
 
-const CourseModel = model<Course>('Course', courseSchema)
+export const courseFaqSchema = z.object({
+  id: z.string().uuid(),
+  courseId: z.string().uuid(),
+  question: z.string().min(1),
+  answer: z.string().min(1),
+  order: z.number().int().default(0),
+  createdAt: z.date()
+})
 
-export default CourseModel
+export const courseFaqItemInputSchema = z.object({
+  question: z.string().min(1),
+  answer: z.string().min(1),
+  order: z.number().int().optional().default(0)
+})
+
+/**
+ * Legacy API compatibility schema for course `info`
+ * Reflects MongoDB embedded structure: requirements, benefits, techniques, documents, qa
+ */
+export const courseInfoCompatibilitySchema = z.object({
+  requirements: z.array(z.string()).default([]),
+  benefits: z.array(z.string()).default([]),
+  techniques: z.array(z.string()).default([]),
+  documents: z.array(z.string()).default([]),
+  qa: z.array(
+    z.object({
+      question: z.string(),
+      answer: z.string()
+    })
+  ).default([])
+})
+
+// ==========================================
+// 2. BASE DOMAIN SCHEMA (Reflects pure domain entity)
+// ==========================================
+
+export const courseSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().min(1).max(255),
+  slug: z.string().min(1).max(255),
+  image: z.string().default(''),
+  introUrl: z.string().default(''),
+  description: z.string().default(''),
+  price: z.number().min(0).default(0),
+  oldPrice: z.number().min(0).default(0),
+  type: z.nativeEnum(CourseType).default(CourseType.PAID),
+  status: z.nativeEnum(CourseStatus).default(CourseStatus.PENDING),
+  level: z.nativeEnum(CourseLevel).default(CourseLevel.BEGINNER),
+  view: z.number().int().nonnegative().default(0),
+  sold: z.number().int().nonnegative().default(0),
+  requirements: z.array(z.string()).default([]),
+  benefits: z.array(z.string()).default([]),
+  techniques: z.array(z.string()).default([]),
+  documents: z.array(z.string()).default([]),
+  categoryId: z.string().uuid().nullable().optional(),
+  authorId: z.string().uuid(),
+  isDestroyed: z.boolean().default(false),
+  createdAt: z.date(),
+  updatedAt: z.date()
+})
+
+// ==========================================
+// 3. PUBLIC / RESPONSE SCHEMAS
+// ==========================================
+
+export const coursePublicSchema = courseSchema.pick({
+  id: true,
+  title: true,
+  slug: true,
+  image: true,
+  introUrl: true,
+  description: true,
+  price: true,
+  oldPrice: true,
+  type: true,
+  status: true,
+  level: true,
+  view: true,
+  sold: true,
+  requirements: true,
+  benefits: true,
+  techniques: true,
+  documents: true,
+  categoryId: true,
+  authorId: true,
+  createdAt: true,
+  updatedAt: true
+})
+
+export const courseCompactSchema = courseSchema.pick({
+  id: true,
+  title: true,
+  slug: true,
+  image: true,
+  price: true,
+  type: true,
+  status: true
+})
+
+export const courseDetailResponseSchema = coursePublicSchema.extend({
+  author: userCompactSchema.optional(),
+  category: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    slug: z.string()
+  }).nullable().optional(),
+  faqs: z.array(courseFaqSchema).optional(),
+  info: courseInfoCompatibilitySchema.optional()
+})
+
+// ==========================================
+// 4. INPUT ACTION SCHEMAS
+// ==========================================
+
+export const createCourseInputSchema = z.object({
+  title: z.string().min(1).max(255),
+  slug: z.string().min(1).max(255).optional(),
+  image: z.string().optional().default(''),
+  introUrl: z.string().optional().default(''),
+  description: z.string().optional().default(''),
+  price: z.number().min(0).optional().default(0),
+  oldPrice: z.number().min(0).optional().default(0),
+  type: z.nativeEnum(CourseType).optional().default(CourseType.PAID),
+  level: z.nativeEnum(CourseLevel).optional().default(CourseLevel.BEGINNER),
+  requirements: z.array(z.string()).optional().default([]),
+  benefits: z.array(z.string()).optional().default([]),
+  techniques: z.array(z.string()).optional().default([]),
+  documents: z.array(z.string()).optional().default([]),
+  categoryId: z.string().uuid().nullable().optional(),
+  authorId: z.string().uuid(),
+  faqs: z.array(courseFaqItemInputSchema).optional().default([])
+})
+
+export const updateCourseInputSchema = createCourseInputSchema.partial().omit({ authorId: true })
+
+export const updateCourseStatusInputSchema = z.object({
+  status: z.nativeEnum(CourseStatus)
+})
+
+// ==========================================
+// 5. INFERRED TYPESCRIPT TYPES
+// ==========================================
+
+export type Course = z.infer<typeof courseSchema>
+export type CourseFaq = z.infer<typeof courseFaqSchema>
+export type CourseFaqItemInput = z.infer<typeof courseFaqItemInputSchema>
+export type CourseInfoCompatibility = z.infer<typeof courseInfoCompatibilitySchema>
+export type CoursePublic = z.infer<typeof coursePublicSchema>
+export type CourseCompact = z.infer<typeof courseCompactSchema>
+export type CourseDetailResponse = z.infer<typeof courseDetailResponseSchema>
+export type CreateCourseInput = z.infer<typeof createCourseInputSchema>
+export type UpdateCourseInput = z.infer<typeof updateCourseInputSchema>
+export type UpdateCourseStatusInput = z.infer<typeof updateCourseStatusInputSchema>

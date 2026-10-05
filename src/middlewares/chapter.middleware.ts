@@ -1,11 +1,11 @@
 import { body, param } from 'express-validator'
-import mongoose from 'mongoose'
+import { validateUUIDParam } from '~/utils/uuid'
 
 export const createChapterValidator = [
   param('courseId')
     .notEmpty()
     .withMessage('Course ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom(validateUUIDParam)
     .withMessage('Invalid course ID'),
 
   body('title')
@@ -21,7 +21,7 @@ export const updateChapterValidator = [
   param('id')
     .notEmpty()
     .withMessage('Chapter ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom(validateUUIDParam)
     .withMessage('Invalid Chapter ID'),
 
   body('title').optional({ checkFalsy: true }).isLength({ min: 2 }).withMessage('Title must be at least 2 characters'),
@@ -29,4 +29,12 @@ export const updateChapterValidator = [
   body('order').optional({ checkFalsy: true }).isInt({ min: 1 }).withMessage('Order must be a positive integer'),
 
   body('_destroy').optional().isBoolean().withMessage('_destroy must be true/false')
+]
+
+export const chapterIdValidator = [
+  param('id')
+    .notEmpty()
+    .withMessage('Chapter ID is required')
+    .custom(validateUUIDParam)
+    .withMessage('Invalid Chapter ID')
 ]

@@ -10,6 +10,7 @@ import {
   updateCommentController
 } from '~/controller/comment.controller'
 import {
+  commentIdParamValidator,
   commentIdValidator,
   createCommentValidator,
   getCommentsQueryValidator,
@@ -42,10 +43,22 @@ commentRouter.put(
   updateCommentController
 )
 // Like comment : POST /api/comments/:commentId/like
-commentRouter.post('/like/:commentId', verifyAccessToken, likeCommentController)
+commentRouter.post(
+  '/like/:commentId',
+  verifyAccessToken,
+  commentIdParamValidator,
+  handleValidationErrors,
+  likeCommentController
+)
 
 // Dislike comment : POST /api/comments/:commentId/dislike
-commentRouter.post('/dislike/:commentId', verifyAccessToken, dislikeCommentController)
+commentRouter.post(
+  '/dislike/:commentId',
+  verifyAccessToken,
+  commentIdParamValidator,
+  handleValidationErrors,
+  dislikeCommentController
+)
 // GET COMMENTS (Admin / Teacher) : GET /api/comments
 commentRouter.get(
   '/',

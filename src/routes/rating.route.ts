@@ -5,7 +5,7 @@ import {
   getCourseRatingsController,
   getRatingsForAdminOrTeacherController,
   updateRatingStatusController
-} from '~/controller/raing.controller'
+} from '~/controller/rating.controller'
 import { courseIdValidator } from '~/middlewares/course.middleware'
 import {
   createNewRatingValidator,

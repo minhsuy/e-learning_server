@@ -3,7 +3,7 @@ import asyncHandler from 'express-async-handler'
 import { addFavoriteService, getFavoritesService, removeFavoriteService } from '~/services/favoriteCourse.service'
 
 export const addFavoriteController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { id } = req.params
+  const id = String(req.params.id)
   const { userId } = req.user as { userId: string }
 
   const result = await addFavoriteService(userId, id)
@@ -11,7 +11,7 @@ export const addFavoriteController = asyncHandler(async (req: Request, res: Resp
 })
 
 export const removeFavoriteController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { id } = req.params
+  const id = String(req.params.id)
   const { userId } = req.user as { userId: string }
 
   const result = await removeFavoriteService(userId, id)

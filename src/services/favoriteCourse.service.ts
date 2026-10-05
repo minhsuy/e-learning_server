@@ -1,48 +1,98 @@
-import FavoriteCourseModel from '~/models/favoriteCourse.model'
-import CourseModel from '~/models/course.model'
+import { Prisma } from '@prisma/client'
+import { findCourseById } from '~/repositories/course.repository'
+import {
+  countFavoritesByUserId,
+  createFavorite,
+  deleteFavorite,
+  findFavorite,
+  findFavoritesByUserId
+} from '~/repositories/favoriteCourse.repository'
 import { ServiceResponse } from '~/types/type'
-import { Types } from 'mongoose'
+import { withCompatId } from '~/utils/uuid'
 
-export const addFavoriteService = async (userId: string, courseId: string): Promise<ServiceResponse> => {
-  const course = await CourseModel.findById(courseId)
-  if (!course) return { success: false, statusCode: 404, message: 'Course not found' }
+/**
+ * TMDEMY — FAVORITE COURSE SERVICE
+ * 
+ * Manages user course wishlist / bookmarks.
+ * Single source of truth: PostgreSQL via Functional Repositories.
+ */
 
-  const existing = await FavoriteCourseModel.findOne({ user: userId, course: courseId })
-  if (existing) return { success: false, statusCode: 400, message: 'Course already in favorites' }
+export const addFavoriteService = async (
+  userId: string,
+  courseId: string
+): Promise<ServiceResponse> => {
+  // 1. Verify Course exists in PostgreSQL
+  const course = await findCourseById(courseId)
+  if (!course) {
+    return { success: false, statusCode: 404, message: 'Course not found' }
+  }
 
-  const favorite = await FavoriteCourseModel.create({
-    user: new Types.ObjectId(userId),
-    course: new Types.ObjectId(courseId)
-  })
+  // 2. Check if already favorited
+  const existing = await findFavorite(userId, courseId)
+  if (existing) {
+    return { success: false, statusCode: 400, message: 'Course already in favorites' }
+  }
 
-  return { success: true, message: 'Course added to favorites', data: favorite }
+  // 3. Create Favorite in PostgreSQL
+  try {
+    const favorite = await createFavorite(userId, courseId)
+    return {
+      success: true,
+      message: 'Course added to favorites',
+      data: withCompatId(favorite)
+    }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { success: false, statusCode: 400, message: 'Course already in favorites' }
+    }
+    throw error
+  }
 }
 
-export const removeFavoriteService = async (userId: string, courseId: string): Promise<ServiceResponse> => {
-  const existing = await FavoriteCourseModel.findOne({ user: userId, course: courseId })
-  if (!existing) return { success: false, statusCode: 404, message: 'Favorite not found' }
+export const removeFavoriteService = async (
+  userId: string,
+  courseId: string
+): Promise<ServiceResponse> => {
+  // 1. Check if favorite exists
+  const existing = await findFavorite(userId, courseId)
+  if (!existing) {
+    return { success: false, statusCode: 404, message: 'Favorite not found' }
+  }
 
-  await FavoriteCourseModel.findByIdAndDelete(existing._id)
+  // 2. Delete Favorite
+  await deleteFavorite(userId, courseId)
 
-  return { success: true, message: 'Course removed from favorites' }
+  return {
+    success: true,
+    message: 'Course removed from favorites'
+  }
 }
 
-export const getFavoritesService = async (userId: string, page = 1, limit = 10): Promise<ServiceResponse> => {
-  const skip = (page - 1) * limit
+export const getFavoritesService = async (
+  userId: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<ServiceResponse> => {
   const [favorites, total] = await Promise.all([
-    FavoriteCourseModel.find({ user: userId })
-      .populate('course', 'title slug image price')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit),
-    FavoriteCourseModel.countDocuments({ user: userId })
+    findFavoritesByUserId(userId, page, limit),
+    countFavoritesByUserId(userId)
   ])
+
+  const formattedFavorites = favorites.map((fav) => ({
+    ...withCompatId(fav),
+    course: fav.course
+      ? {
+          ...withCompatId(fav.course),
+          price: Number(fav.course.price)
+        }
+      : null
+  }))
 
   return {
     success: true,
     message: 'Fetched favorites successfully',
     data: {
-      favorites,
+      favorites: formattedFavorites,
       pagination: {
         page,
         limit,

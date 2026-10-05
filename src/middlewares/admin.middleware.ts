@@ -1,5 +1,6 @@
 import { body, param, query } from 'express-validator'
 import { UserRole, UserStatus } from '~/types/enum'
+import { isValidUUID } from '~/utils/uuid'
 
 export const getAllUsersValidator = [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be >= 1'),
@@ -23,10 +24,20 @@ export const getAllUsersValidator = [
     .isIn(['createdAt', 'username', 'email'])
     .withMessage('Invalid sort field')
 ]
-export const getUserDetailValidator = [param('id').isMongoId().withMessage('Invalid user id')]
+export const getUserDetailValidator = [
+  param('id')
+    .notEmpty()
+    .withMessage('Invalid user id')
+    .custom((value) => isValidUUID(value))
+    .withMessage('Invalid user id')
+]
 
 export const updateUserByAdminValidator = [
-  param('id').isMongoId().withMessage('Invalid user id'),
+  param('id')
+    .notEmpty()
+    .withMessage('Invalid user id')
+    .custom((value) => isValidUUID(value))
+    .withMessage('Invalid user id'),
 
   body('email').not().exists().withMessage('Email cannot be updated here'),
   body('password').not().exists().withMessage('Password cannot be updated here'),

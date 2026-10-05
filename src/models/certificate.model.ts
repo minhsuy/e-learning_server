@@ -1,39 +1,68 @@
-import { Schema, model, Document } from 'mongoose'
+import { z } from 'zod'
 
-export interface Certificate extends Document {
-  user: Schema.Types.ObjectId
-  course: Schema.Types.ObjectId
-  issuedAt: Date
-  grade: number
-  certificateUrl: string
-}
+/**
+ * TMDEMY — ZOD APPLICATION DOMAIN MODEL: CERTIFICATE
+ * 
+ * Single Source of Truth for Certificate domain validation and types at Application Layer.
+ * Conforms to AGENTS.md and application-model-design.md
+ * 
+ * Physical Database constraints: prisma/schema.prisma (model Certificate)
+ * Legacy Mongoose Model: src/models/legacy/certificate.legacy.model.ts
+ */
 
-const CertificateSchema = new Schema<Certificate>(
-  {
-    user: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    course: {
-      type: Schema.Types.ObjectId,
-      ref: 'Course',
-      required: true
-    },
-    issuedAt: {
-      type: Date,
-      default: Date.now
-    },
-    grade: {
-      type: Number,
-      required: true
-    },
-    certificateUrl: {
-      type: String
-    }
-  },
-  { timestamps: true }
-)
+// ==========================================
+// 1. BASE DOMAIN SCHEMA
+// ==========================================
 
-const CertificateModel = model<Certificate>('Certificate', CertificateSchema)
-export default CertificateModel
+export const certificateBaseSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  courseId: z.string().uuid(),
+  grade: z.number().min(0).max(100),
+  certificateUrl: z.string().url(),
+  issuedAt: z.date(),
+  createdAt: z.date(),
+  updatedAt: z.date()
+})
+
+// ==========================================
+// 2. INPUT / MUTATION SCHEMAS
+// ==========================================
+
+export const createCertificateInputSchema = z.object({
+  userId: z.string().uuid(),
+  courseId: z.string().uuid()
+})
+
+export const createCertificateDataSchema = z.object({
+  userId: z.string().uuid(),
+  courseId: z.string().uuid(),
+  grade: z.number().min(0).max(100),
+  certificateUrl: z.string(),
+  issuedAt: z.date().optional()
+})
+
+// ==========================================
+// 3. RESPONSE / DTO SCHEMAS
+// ==========================================
+
+export const certificatePublicResponseSchema = z.object({
+  id: z.string().uuid(),
+  _id: z.string().optional(),
+  userId: z.string().uuid(),
+  courseId: z.string().uuid(),
+  grade: z.number(),
+  certificateUrl: z.string(),
+  issuedAt: z.date(),
+  createdAt: z.date(),
+  updatedAt: z.date()
+})
+
+// ==========================================
+// 4. INFERRED TYPESCRIPT TYPES
+// ==========================================
+
+export type Certificate = z.infer<typeof certificateBaseSchema>
+export type CreateCertificateInput = z.infer<typeof createCertificateInputSchema>
+export type CreateCertificateData = z.infer<typeof createCertificateDataSchema>
+export type CertificatePublicResponse = z.infer<typeof certificatePublicResponseSchema>

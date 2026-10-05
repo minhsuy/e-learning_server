@@ -1,7 +1,12 @@
 import express, { Request, Response } from 'express'
 import { verifyAccessToken } from '~/middlewares/verifyToken'
 import { isTeacherOrAdmin } from '~/middlewares/verifyRole'
-import { createQuizValidator, quizIdValidator, updateQuizValidator } from '~/middlewares/quiz.middleware'
+import {
+  createQuizValidator,
+  lessonIdValidator,
+  quizIdValidator,
+  updateQuizValidator
+} from '~/middlewares/quiz.middleware'
 import { handleValidationErrors } from '~/middlewares/validate'
 import {
   createQuizController,
@@ -9,7 +14,6 @@ import {
   getQuizzesByLessonController,
   updateQuizController
 } from '~/controller/quiz.controller'
-import { lessonIdValidator } from '~/middlewares/comment.middleware'
 const quizRouter = express.Router()
 
 // POST /api/quiz -> create a new quiz

@@ -1,32 +1,50 @@
-import { FilterQuery, Types } from 'mongoose'
-import CourseModel from '~/models/course.model'
-import EnrollmentModel from '~/models/enrollment.model'
-import OrderModel from '~/models/order.model'
-import UserModel from '~/models/user.model'
+import { prisma } from '~/config/prisma'
+import {
+  countStudentsByCourseId,
+  deleteEnrollment,
+  findEnrollmentsByUserId,
+  findStudentsByCourseId
+} from '~/repositories/enrollment.repository'
+import { findCourseById, incrementCourseSoldCount } from '~/repositories/course.repository'
 import { UserRole } from '~/types/enum'
 import { ServiceResponse } from '~/types/type'
+import { isValidUUID, withCompatId } from '~/utils/uuid'
 
+
+/**
+ * Format course inside an enrollment response to ensure Number prices and MongoDB _id compatibility.
+ */
+const formatEnrollmentCourse = (course: any) => {
+  if (!course) return null
+  return {
+    ...withCompatId(course),
+    price: Number(course.price)
+  }
+}
+
+/**
+ * Get enrollments belonging to the current authenticated user.
+ */
 export const getMyEnrollmentsService = async ({ userId }: { userId: string }): Promise<ServiceResponse> => {
-  if (!userId) {
+  if (!isValidUUID(userId)) {
     return { success: false, statusCode: 401, message: 'User not found' }
   }
 
-  const enrollments = await EnrollmentModel.find({ user: userId })
-    .populate({
-      path: 'course',
-      select: 'title slug image price level type sold view'
-    })
-    .select('progress enrolledAt')
-    .sort({ createdAt: -1 })
+  const enrollments = await findEnrollmentsByUserId(userId)
 
   return {
     success: true,
     message: 'Fetched enrolled courses successfully',
-    data: enrollments
+    data: enrollments.map((e) => ({
+      ...withCompatId(e),
+      course: formatEnrollmentCourse(e.course)
+    }))
   }
 }
 
-// get students by specific course
+/**
+ * Get students enrolled in a specific course (for Teacher or Admin).
+ */
 export const getStudentsByCourseService = async ({
   courseId,
   userId,
@@ -42,57 +60,55 @@ export const getStudentsByCourseService = async ({
   limit?: number
   search?: string
 }): Promise<ServiceResponse> => {
-  const course = await CourseModel.findById(courseId).select('author title')
+  if (!isValidUUID(courseId)) {
+    return { success: false, statusCode: 400, message: 'Invalid Course ID' }
+  }
+
+  const course = await findCourseById(courseId)
   if (!course) {
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
-  if (role === UserRole.TEACHER && course.author.toString() !== userId) {
+  const isTeacher = String(role).toLowerCase() === 'teacher'
+  if (isTeacher && course.authorId !== userId) {
     return { success: false, statusCode: 403, message: 'You are not the owner of this course' }
   }
 
-  const skip = (page - 1) * limit
-
-  const filter: FilterQuery<typeof EnrollmentModel> = {
-    course: new Types.ObjectId(courseId)
-  }
-
-  const matchUser: any = search
-    ? { $or: [{ username: { $regex: search, $options: 'i' } }, { email: { $regex: search, $options: 'i' } }] }
-    : {}
-
   const [students, total] = await Promise.all([
-    EnrollmentModel.find(filter)
-      .populate({
-        path: 'user',
-        match: matchUser,
-        select: '_id username email avatar'
-      })
-      .select('progress enrolledAt')
-      .skip(skip)
-      .limit(Number(limit))
-      .sort({ createdAt: -1 })
-      .lean(),
-    EnrollmentModel.countDocuments(filter)
+    findStudentsByCourseId({
+      courseId,
+      search: search.trim() || undefined,
+      page: Number(page),
+      limit: Number(limit)
+    }),
+    countStudentsByCourseId({
+      courseId,
+      search: search.trim() || undefined
+    })
   ])
-
-  const filteredStudents = students.filter((e: any) => e.user)
 
   return {
     success: true,
     message: 'Fetched enrolled students successfully!',
     data: {
-      students: filteredStudents,
+      students: students.map((s) => ({
+        ...withCompatId(s),
+        user: s.user ? withCompatId(s.user) : null
+      })),
       pagination: {
         page: Number(page),
         limit: Number(limit),
-        total: filteredStudents.length,
-        totalPages: Math.ceil(filteredStudents.length / limit)
+        total,
+        totalPages: Math.ceil(total / Number(limit)) || 1
       }
     }
   }
 }
-// kick a student from a course
+
+/**
+ * Remove (kick) a student from a course.
+ * Performs atomic deletion & sold decrement on PostgreSQL, then dual-writes to MongoDB.
+ */
 export const removeStudentFromCourseService = async ({
   courseId,
   targetUserId,
@@ -104,28 +120,49 @@ export const removeStudentFromCourseService = async ({
   userId: string
   role: string
 }): Promise<ServiceResponse> => {
-  const course = await CourseModel.findById(courseId)
+  if (!isValidUUID(courseId)) {
+    return { success: false, statusCode: 400, message: 'Invalid Course ID' }
+  }
+  if (!isValidUUID(targetUserId)) {
+    return { success: false, statusCode: 400, message: 'Invalid Student ID' }
+  }
+
+  const course = await findCourseById(courseId)
   if (!course) {
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
-  if (role === UserRole.TEACHER && course.author.toString() !== userId) {
+  const isTeacher = String(role).toLowerCase() === 'teacher'
+  if (isTeacher && course.authorId !== userId) {
     return { success: false, statusCode: 403, message: 'You are not the owner of this course' }
   }
 
-  const enrollment = await EnrollmentModel.findOneAndDelete({
-    course: new Types.ObjectId(courseId),
-    user: new Types.ObjectId(targetUserId)
+  // Execute PostgreSQL modifications atomically inside a transaction
+  const deletedEnrollment = await prisma.$transaction(async (tx) => {
+    const enrollment = await deleteEnrollment(targetUserId, courseId, tx)
+    if (!enrollment) {
+      return null
+    }
+
+    // Decrement course sold count on PostgreSQL
+    await incrementCourseSoldCount(courseId, -1, tx)
+
+    // Remove any corresponding Order on PostgreSQL
+    await tx.order.deleteMany({
+      where: {
+        userId: targetUserId,
+        courseId
+      }
+    })
+
+    return enrollment
   })
-  if (!enrollment) {
+
+  if (!deletedEnrollment) {
     return { success: false, statusCode: 404, message: 'Student not found in this course' }
   }
 
-  await Promise.all([
-    UserModel.findByIdAndUpdate(targetUserId, { $pull: { courses: courseId } }),
-    CourseModel.findByIdAndUpdate(courseId, { $inc: { sold: -1 } }),
-    OrderModel.findOneAndDelete({ course: new Types.ObjectId(courseId), user: new Types.ObjectId(targetUserId) })
-  ])
+
 
   return {
     success: true,

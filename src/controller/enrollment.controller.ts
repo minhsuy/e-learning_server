@@ -17,7 +17,7 @@ export const getMyEnrollmentsController = asyncHandler(async (req: Request, res:
 
 // get students by specific course
 export const getStudentsByCourseController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { id } = req.params
+  const id = req.params.id as string
   const { page = 1, limit = 10, search } = req.query
   const { userId, role } = req.user as { userId: string; role: string }
 
@@ -35,7 +35,8 @@ export const getStudentsByCourseController = asyncHandler(async (req: Request, r
 
 // kick a student from a course
 export const removeStudentFromCourseController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { id, userId: targetUserId } = req.params
+  const id = req.params.id as string
+  const targetUserId = req.params.userId as string
   const { userId, role } = req.user as { userId: string; role: string }
   const result = await removeStudentFromCourseService({
     courseId: id,

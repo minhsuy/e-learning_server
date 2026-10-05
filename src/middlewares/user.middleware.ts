@@ -1,10 +1,10 @@
 import { body, param, query } from 'express-validator'
-import UserModel from '~/models/user.model'
-import { UserRole } from '~/types/enum'
 import dotenv from 'dotenv'
-import mongoose from 'mongoose'
+import { isValidUUID } from '~/utils/uuid'
 
 dotenv.config()
+
+// REGISTER VALIDATOR (Public Registration)
 export const registerValidator = [
   body('username')
     .notEmpty()
@@ -16,14 +16,7 @@ export const registerValidator = [
     .notEmpty()
     .withMessage('Email is required')
     .isEmail()
-    .withMessage('Invalid email format')
-    .custom(async (email) => {
-      const existingUser = await UserModel.findOne({ email })
-      if (existingUser) {
-        throw new Error('Email already in use')
-      }
-      return true
-    }),
+    .withMessage('Invalid email format'),
 
   body('password')
     .notEmpty()
@@ -42,13 +35,13 @@ export const registerValidator = [
       }
       return true
     }),
+
   body('phone').optional().isMobilePhone('vi-VN').withMessage('Invalid phone number'),
 
-  body('bio').optional().isLength({ max: 200 }).withMessage('Bio must not exceed 200 characters'),
-
-  body('role').optional().isIn(Object.values(UserRole)).withMessage('Invalid role')
+  body('bio').optional().isLength({ max: 200 }).withMessage('Bio must not exceed 200 characters')
 ]
 
+// VERIFY OTP VALIDATOR
 export const verifyOtpValidator = [
   body('email')
     .notEmpty()
@@ -65,22 +58,14 @@ export const verifyOtpValidator = [
     .withMessage('Mã OTP chỉ chứa số')
 ]
 
+// LOGIN VALIDATOR (Syntactic checks only; DB lookups moved to Service)
 export const loginValidator = [
   body('email')
     .notEmpty()
     .withMessage('Email is required')
     .isEmail()
-    .withMessage('Invalid email format')
-    .custom(async (email) => {
-      const user = await UserModel.findOne({ email })
-      if (!user) {
-        throw new Error('Email không tồn tại')
-      }
-      if (!user.isVerified) {
-        throw new Error('Vui lòng xác thực email trước khi đăng nhập')
-      }
-      return true
-    }),
+    .withMessage('Invalid email format'),
+
   body('password')
     .notEmpty()
     .withMessage('Password is required')
@@ -88,26 +73,23 @@ export const loginValidator = [
     .withMessage('Password must be at least 6 characters long')
 ]
 
+// FORGOT PASSWORD VALIDATOR
 export const forgotPasswordValidator = [
   body('email')
     .notEmpty()
     .withMessage('Email is required')
     .isEmail()
     .withMessage('Invalid email format')
-    .custom(async (value) => {
-      const user = await UserModel.findOne({ email: value })
-      if (!user) {
-        throw new Error('Email not found')
-      }
-    })
 ]
 
+// RESET PASSWORD VALIDATOR
 export const resetPasswordValidator = [
   body('password')
     .notEmpty()
     .withMessage('Password is required')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
+
   body('confirm_password')
     .notEmpty()
     .withMessage('Confirm password is required')
@@ -121,17 +103,20 @@ export const resetPasswordValidator = [
     })
 ]
 
+// CHANGE PASSWORD VALIDATOR
 export const changePasswordValidator = [
   body('oldPassword')
     .notEmpty()
     .withMessage('Old password is required')
     .isLength({ min: 6 })
     .withMessage('Old password must be at least 6 characters long'),
+
   body('password')
     .notEmpty()
     .withMessage('Password is required')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
+
   body('confirm_password')
     .notEmpty()
     .withMessage('Confirm password is required')
@@ -145,6 +130,7 @@ export const changePasswordValidator = [
     })
 ]
 
+// UPDATE ME VALIDATOR
 export const updateMeValidator = [
   body('username').optional().isLength({ min: 3 }).withMessage('Username must be at least 3 characters long'),
 
@@ -160,19 +146,24 @@ export const updateMeValidator = [
 
   body('socialLinks.github').optional().isURL().withMessage('Github link must be a valid URL')
 ]
+
+// LIST TEACHERS VALIDATOR
 export const listTeachersValidator = [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
   query('search').optional().isString().withMessage('Search must be a string')
 ]
 
+// USER ID PARAM VALIDATOR
 export const userIdValidator = [
   param('userId')
     .notEmpty()
     .withMessage('User ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom((value) => isValidUUID(value))
     .withMessage('Invalid User ID')
 ]
+
+// REFRESH TOKEN VALIDATOR
 export const refreshTokenValidator = [
   body('refreshToken')
     .notEmpty()

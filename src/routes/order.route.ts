@@ -14,7 +14,6 @@ const orderRouter = express.Router()
 
 // create order : POST /api/orders  (Teacher or Admin)
 orderRouter.post('/', verifyAccessToken, createOrderValidator, handleValidationErrors, createOrderController)
-export default orderRouter
 
 // get my order : GET /api/orders/my
 orderRouter.get('/my', verifyAccessToken, getMyOrdersController)
@@ -39,3 +38,6 @@ orderRouter.get(
   handleValidationErrors,
   getOrdersController
 )
+
+export default orderRouter
+

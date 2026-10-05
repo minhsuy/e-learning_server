@@ -24,14 +24,14 @@ export const createCommentController = asyncHandler(async (req: Request, res: Re
 })
 
 export const getCommentsByLessonController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { lessonId } = req.params
+  const lessonId = req.params.lessonId as string
   const result = await getCommentsByLessonService({ lessonId })
   return res.status(result.statusCode || 200).json(result)
 })
 // delete comment :
 export const deleteCommentController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { userId, role } = req.user as { userId: string; role: string }
-  const { id } = req.params
+  const id = req.params.id as string
 
   const result = await deleteCommentService({ commentId: id, userId, role })
   return res.status(result.statusCode || 200).json(result)
@@ -56,7 +56,7 @@ export const getCommentsByAdminOrTeacherController = asyncHandler(async (req: Re
 // update-comment :
 
 export const updateCommentController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { id } = req.params
+  const id = req.params.id as string
   const { content } = req.body
 
   const { userId, role } = req.user as { userId: string; role: string }
@@ -71,7 +71,7 @@ export const updateCommentController = asyncHandler(async (req: Request, res: Re
   return res.status(result.statusCode || 200).json(result)
 })
 export const likeCommentController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { commentId } = req.params
+  const commentId = req.params.commentId as string
   const { userId } = req.user as { userId: string }
 
   const result = await likeCommentService({
@@ -83,7 +83,7 @@ export const likeCommentController = asyncHandler(async (req: Request, res: Resp
 })
 
 export const dislikeCommentController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { commentId } = req.params
+  const commentId = req.params.commentId as string
   const { userId } = req.user as { userId: string }
 
   const result = await dislikeCommentService({
@@ -97,7 +97,7 @@ export const dislikeCommentController = asyncHandler(async (req: Request, res: R
 // delete comment by admin or teacher
 export const deleteCommentByAdminOrTeacherController = asyncHandler(
   async (req: Request, res: Response): Promise<any> => {
-    const { id } = req.params // Lấy commentId từ URL
+    const id = req.params.id as string
     const { userId, role } = req.user as { userId: string; role: string }
 
     const result = await deleteCommentByAdminOrTeacherService({

@@ -1,11 +1,11 @@
 import { body, param } from 'express-validator'
-import { Types } from 'mongoose'
+import { isValidUUID } from '~/utils/uuid'
 
 export const createQuestionValidator = [
   body('quiz')
     .notEmpty()
     .withMessage('Quiz ID is required')
-    .custom((value) => Types.ObjectId.isValid(value))
+    .custom((value) => isValidUUID(value))
     .withMessage('Invalid Quiz ID'),
   body('type')
     .notEmpty()
@@ -14,13 +14,15 @@ export const createQuestionValidator = [
     .withMessage('Invalid question type'),
   body('title').notEmpty().withMessage('Title is required'),
   body('options').optional().isArray().withMessage('Options must be an array of strings'),
-  body('answer').notEmpty().withMessage('Answer is required')
+  body('answer').notEmpty().withMessage('Answer is required'),
+  body('points').optional().isNumeric().withMessage('Points must be a number')
 ]
+
 export const updateQuestionValidator = [
   param('questionId')
     .notEmpty()
     .withMessage('Question ID is required')
-    .custom((value) => Types.ObjectId.isValid(value))
+    .custom((value) => isValidUUID(value))
     .withMessage('Invalid Question ID'),
   body('title').optional().isString(),
   body('options').optional().isArray(),
@@ -33,6 +35,6 @@ export const questionIdValidator = [
   param('questionId')
     .notEmpty()
     .withMessage('Question ID is required')
-    .custom((value) => Types.ObjectId.isValid(value))
+    .custom((value) => isValidUUID(value))
     .withMessage('Invalid Question ID')
 ]

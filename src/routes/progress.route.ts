@@ -1,12 +1,13 @@
 import express from 'express'
-import { getCategoriesController, getCategoryDetailController } from '~/controller/category.controller'
 import {
   getProgressByCourseController,
   markLessonCompleteController,
   unmarkLessonCompleteController
 } from '~/controller/progress.controller'
-import { getCategoryDetailValidator, listCategoriesValidator } from '~/middlewares/category.middleware'
-import { markLessonCompleteValidator } from '~/middlewares/progress.middleware'
+import {
+  markLessonCompleteValidator,
+  progressCourseIdValidator
+} from '~/middlewares/progress.middleware'
 import { handleValidationErrors } from '~/middlewares/validate'
 import { verifyAccessToken } from '~/middlewares/verifyToken'
 
@@ -20,6 +21,7 @@ progressRouter.post(
   handleValidationErrors,
   markLessonCompleteController
 )
+
 // POST /api/progress/uncomplete
 progressRouter.post(
   '/uncomplete',
@@ -30,6 +32,12 @@ progressRouter.post(
 )
 
 // GET /api/progress/:courseId  : get progress by course
-progressRouter.get('/:courseId', verifyAccessToken, getProgressByCourseController)
+progressRouter.get(
+  '/:courseId',
+  verifyAccessToken,
+  progressCourseIdValidator,
+  handleValidationErrors,
+  getProgressByCourseController
+)
 
 export default progressRouter

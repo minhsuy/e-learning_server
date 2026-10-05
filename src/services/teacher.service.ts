@@ -1,69 +1,94 @@
-import { FilterQuery, Types } from 'mongoose'
-import CourseModel from '~/models/course.model'
-import { CourseStatus } from '~/types/enum'
+import { CourseLevel, CourseStatus, CourseType, Prisma } from '@prisma/client'
+import { PrismaTransactionClient } from '~/config/prisma'
+import { deleteCourse, findCourseById, findCoursesByAuthor, updateCourse } from '~/repositories/course.repository'
 import { ListQuery } from '~/types/type'
+import { isValidUUID, withCompatId } from '~/utils/uuid'
+import { formatSafeCourse, toPrismaCourseLevel, toPrismaCourseStatus, toPrismaCourseType } from './course.service'
+import { UpdateCourseInput } from '~/models/course.model'
 
-// update course
-export const updateCourseByTeacherService = async ({
-  courseId,
-  teacherId,
-  payload
-}: {
-  courseId: string
-  teacherId: string
-  payload: Record<string, any>
-}) => {
-  if (!Types.ObjectId.isValid(courseId)) {
+/**
+ * Checks if a string is a 24-character hexadecimal MongoDB ObjectId.
+ */
+function isLegacyObjectId(id: string): boolean {
+  return /^[0-9a-fA-F]{24}$/.test(id)
+}
+
+// UPDATE COURSE BY TEACHER
+export const updateCourseByTeacherService = async (
+  {
+    courseId,
+    teacherId,
+    payload
+  }: {
+    courseId: string
+    teacherId: string
+    payload: Record<string, any>
+  },
+  tx?: PrismaTransactionClient
+) => {
+  if (!courseId || (!isValidUUID(courseId) && !isLegacyObjectId(courseId))) {
     return { success: false, statusCode: 400, message: 'Invalid course ID' }
   }
 
-  const course = await CourseModel.findById(courseId)
-  if (!course || course._destroy) {
+  const course = await findCourseById(courseId, tx)
+  if (!course || course.isDestroyed) {
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
-  if (String(course.author) !== String(teacherId)) {
+  if (String(course.authorId) !== String(teacherId)) {
     return { success: false, statusCode: 403, message: 'You can only update your own courses' }
   }
-  if (payload.title) course.title = payload.title
-  if (payload.description) course.description = payload.description
-  if (payload.image) course.image = payload.image
-  if (payload.intro_url) course.intro_url = payload.intro_url
-  if (payload.category) course.category = payload.category
-  if (payload.type) course.type = payload.type
-  if (payload.price !== undefined) course.price = payload.price
-  if (payload.old_price !== undefined) course.old_price = payload.old_price
-  if (payload.level) course.level = payload.level
-  if (payload.view !== undefined) course.view = payload.view
-  if (payload.sold !== undefined) course.sold = payload.sold
+
+  const updateData: Prisma.CourseUpdateInput = {}
+  if (payload.title) updateData.title = payload.title
+  if (payload.description !== undefined) updateData.description = payload.description
+  if (payload.image !== undefined) updateData.image = payload.image
+  if (payload.intro_url !== undefined) updateData.introUrl = payload.intro_url
+  if (payload.category !== undefined) {
+    updateData.category = payload.category && isValidUUID(payload.category)
+      ? { connect: { id: payload.category } }
+      : { disconnect: true }
+  }
+  if (payload.type !== undefined) updateData.type = toPrismaCourseType(payload.type)
+  if (payload.price !== undefined) updateData.price = Number(payload.price)
+  if (payload.old_price !== undefined) updateData.oldPrice = Number(payload.old_price)
+  if (payload.level !== undefined) updateData.level = toPrismaCourseLevel(payload.level)
+  if (payload.view !== undefined) updateData.view = Number(payload.view)
+  if (payload.sold !== undefined) updateData.sold = Number(payload.sold)
+
   if (payload.info) {
-    course.info = {
-      ...course.info,
-      ...payload.info
-    }
+    if (Array.isArray(payload.info.requirements)) updateData.requirements = payload.info.requirements
+    if (Array.isArray(payload.info.benefits)) updateData.benefits = payload.info.benefits
+    if (Array.isArray(payload.info.techniques)) updateData.techniques = payload.info.techniques
+    if (Array.isArray(payload.info.documents)) updateData.documents = payload.info.documents
   }
 
-  await course.save()
+  const updated = await updateCourse(courseId, updateData, tx)
 
   return {
     success: true,
     message: 'Course updated successfully!',
-    data: course
+    data: formatSafeCourse(updated)
   }
 }
 
-// get courses by teacher
+// DELETE COURSE BY TEACHER (ONLY PENDING COURSES)
+export const deleteCoursesByTeacherService = async (
+  {
+    courseId,
+    teacherId
+  }: {
+    courseId: string
+    teacherId: string
+  },
+  tx?: PrismaTransactionClient
+) => {
+  if (!courseId || (!isValidUUID(courseId) && !isLegacyObjectId(courseId))) {
+    return { success: false, statusCode: 400, message: 'Invalid course ID' }
+  }
 
-export const deleteCoursesByTeacherService = async ({
-  courseId,
-  teacherId
-}: {
-  courseId: string
-  teacherId: string
-}) => {
-  const course = await CourseModel.findOne({ _id: courseId, author: teacherId })
-
-  if (!course) {
+  const course = await findCourseById(courseId, tx)
+  if (!course || course.authorId !== teacherId) {
     return { success: false, statusCode: 404, message: 'Course not found' }
   }
 
@@ -71,13 +96,22 @@ export const deleteCoursesByTeacherService = async ({
     return { success: false, statusCode: 403, message: 'Only pending courses can be deleted by teacher' }
   }
 
-  await course.deleteOne()
+  await deleteCourse(courseId, tx)
 
   return { success: true, message: 'Course deleted successfully (by teacher)' }
 }
 
-// get courses by teacher
-export const getCoursesByTeacherService = async ({ teacherId, params }: { teacherId: string; params: ListQuery }) => {
+// GET COURSES BY TEACHER
+export const getCoursesByTeacherService = async (
+  {
+    teacherId,
+    params
+  }: {
+    teacherId: string
+    params: ListQuery
+  },
+  tx?: PrismaTransactionClient
+) => {
   const {
     page = 1,
     limit = 10,
@@ -91,46 +125,39 @@ export const getCoursesByTeacherService = async ({ teacherId, params }: { teache
     sortBy = 'createdAt'
   } = params
 
-  const filter: FilterQuery<typeof CourseModel> = {
-    author: teacherId
-  }
-
-  if (search) {
-    filter.$or = [{ title: { $regex: search, $options: 'i' } }]
-  }
-
-  if (category) filter.category = category
-  if (level) filter.level = level
-  if (type) filter.type = type
-  if (status) filter.status = status
-
-  if (priceMin || priceMax) {
-    filter.price = {}
-    if (priceMin) (filter.price as any).$gte = Number(priceMin)
-    if (priceMax) (filter.price as any).$lte = Number(priceMax)
-  }
-
-  const skip = (page - 1) * limit
-
-  const [courses, total] = await Promise.all([
-    CourseModel.find(filter)
-      .select('title slug status image price old_price level type sold view createdAt updatedAt')
-      .sort({ [sortBy]: -1 })
-      .skip(skip)
-      .limit(limit),
-    CourseModel.countDocuments(filter)
-  ])
+  const result = await findCoursesByAuthor(
+    teacherId,
+    {
+      page: Number(page),
+      limit: Number(limit),
+      search: search ? String(search) : undefined,
+      status: status ? toPrismaCourseStatus(status as string) : undefined,
+      categoryId: category ? String(category) : undefined,
+      level: level ? toPrismaCourseLevel(level as string) : undefined,
+      type: type ? toPrismaCourseType(type as string) : undefined,
+      priceMin: priceMin !== undefined ? Number(priceMin) : undefined,
+      priceMax: priceMax !== undefined ? Number(priceMax) : undefined,
+      sortBy: sortBy as string
+    },
+    tx
+  )
 
   return {
     success: true,
     message: 'Fetched teacher courses successfully!',
     data: {
-      courses,
+      courses: result.courses.map((c) => ({
+        ...withCompatId(c),
+        price: Number(c.price),
+        old_price: Number(c.oldPrice),
+        oldPrice: Number(c.oldPrice),
+        category: c.category ? withCompatId(c.category) : null
+      })),
       pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages
       }
     }
   }

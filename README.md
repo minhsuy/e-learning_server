@@ -32,17 +32,39 @@ Realtime messaging with teachers for direct Q&A.
 ```
 Backend: Node.js, Express, TypeScript
 
-Database: MongoDB (Mongoose ODM)
+Target Database: PostgreSQL 16.11
+
+Target ORM: Prisma ORM 6.4.1 (Prisma Client Singleton)
+
+Validation: Express Validator (HTTP Transport) + Zod (Application Domain Models)
+
+Architecture: Strict Layered Architecture (Router -> Middleware -> Controller -> Service -> Functional Repository -> Prisma Client -> PostgreSQL)
 
 Realtime Communication: Socket.IO
 
 Cloud Storage: Cloudinary for PDF certificates
 
-Authentication: JWT + Role-based Access Control
+Authentication: JWT (Access Token & Refresh Token) + Role-based Access Control (ADMIN, USER, TEACHER)
+```
 
-Architecture: Service-controller-middleware structure with async handlers
+🛠️ Setup & Installation
 
-Deployment Ready: Modular setup for AWS / Docker integration
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Configure environment
+# Copy .env.example to .env and configure your PostgreSQL DATABASE_URL and secrets
+cp .env.example .env
+
+# 3. Generate Prisma Client
+npx prisma generate
+
+# 4. Verify Database Migration Status
+npx prisma migrate status
+
+# 5. Run Development Server
+npm run dev
 ```
 
 💬 Realtime Chat System

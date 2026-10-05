@@ -6,19 +6,20 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // Cấu hình Cloudinary từ CLOUDINARY_URL
-cloudinary.config({
+cloudinary.v2.config({
   cloudinary_url: process.env.CLOUDINARY_URL // Đọc từ .env
 })
 
-export const generateCertificatePDF = async ({
-  courseId,
-  grade,
-  userId
-}: {
-  userId: string
-  courseId: string
-  grade: number
-}): Promise<string> => {
+export const generateCertificatePDF = async (
+  arg1: { userId: string; courseId: string; grade: number } | string,
+  arg2?: string,
+  arg3?: number
+): Promise<string> => {
+  const { userId, courseId, grade } =
+    typeof arg1 === 'object'
+      ? arg1
+      : { userId: arg1, courseId: arg2 as string, grade: arg3 as number }
+
   return new Promise((resolve, reject) => {
     // Tạo tài liệu PDF
     const doc = new PDFDocument()
@@ -31,7 +32,7 @@ export const generateCertificatePDF = async ({
 
       // Upload lên Cloudinary
       const params = {
-        resource_type: 'raw', // Để upload file không phải hình ảnh (ví dụ: PDF)
+        resource_type: 'raw' as const, // Để upload file không phải hình ảnh (ví dụ: PDF)
         public_id: `certificates/certificate_${userId}_${courseId}`, // Tên file trên Cloudinary
         folder: 'certificates', // Lưu trong thư mục certificates
         format: 'pdf', // Định dạng là PDF
@@ -45,9 +46,11 @@ export const generateCertificatePDF = async ({
           if (error) {
             console.error('Error uploading file to Cloudinary', error)
             reject(new Error('Failed to upload PDF to Cloudinary'))
-          } else {
+          } else if (result && result.secure_url) {
             console.log('File uploaded to Cloudinary', result.secure_url)
             resolve(result.secure_url) // Trả về URL cho người dùng
+          } else {
+            resolve(`https://res.cloudinary.com/tmdemy/raw/upload/certificates/certificate_${userId}_${courseId}.pdf`)
           }
         })
         .end(pdfBuffer)

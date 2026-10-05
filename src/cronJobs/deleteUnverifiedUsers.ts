@@ -1,5 +1,5 @@
 import cron from 'node-cron'
-import UserModel from '~/models/user.model'
+import { prisma } from '~/config/prisma'
 import dotenv from 'dotenv'
 
 dotenv.config()
@@ -14,13 +14,23 @@ cron.schedule(cronExpression, async () => {
   try {
     const expireTime = new Date(Date.now() - expireMinutes * 60 * 1000)
 
-    const result = await UserModel.deleteMany({
-      isVerified: { $ne: '' },
-      createdAt: { $lt: expireTime }
+    const result = await prisma.user.deleteMany({
+      where: {
+        isVerified: false,
+        createdAt: { lt: expireTime },
+        authoredCourses: { none: {} },
+        authoredLessons: { none: {} },
+        createdQuizzes: { none: {} },
+        quizSubmissions: { none: {} },
+        orders: { none: {} },
+        enrollments: { none: {} },
+        certificates: { none: {} },
+        sentMessages: { none: {} }
+      }
     })
 
-    if (result.deletedCount && result.deletedCount > 0) {
-      console.log(`⏰ Cron job: Deleted ${result.deletedCount} unverified users`)
+    if (result.count && result.count > 0) {
+      console.log(`⏰ Cron job: Deleted ${result.count} unverified users`)
     } else {
       console.log('✅ Cron job: No unverified users to delete')
     }
@@ -28,3 +38,4 @@ cron.schedule(cronExpression, async () => {
     console.error('❌ Cron job failed:', error)
   }
 })
+

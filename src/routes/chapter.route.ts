@@ -5,10 +5,10 @@ import {
   getChaptersByCourseController,
   updateChapterController
 } from '~/controller/chapter.controller'
-import { createChapterValidator, updateChapterValidator } from '~/middlewares/chapter.middleware'
+import { chapterIdValidator, createChapterValidator, updateChapterValidator } from '~/middlewares/chapter.middleware'
 import { courseIdValidator } from '~/middlewares/course.middleware'
 import { handleValidationErrors } from '~/middlewares/validate'
-import { isAdmin, isTeacherOrAdmin } from '~/middlewares/verifyRole'
+import { isTeacherOrAdmin } from '~/middlewares/verifyRole'
 import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const chapterRouter = express.Router()
@@ -38,12 +38,11 @@ chapterRouter.delete(
   '/:id',
   verifyAccessToken,
   isTeacherOrAdmin,
-  courseIdValidator,
+  chapterIdValidator,
   handleValidationErrors,
   deleteChapterController
 )
 
-//
 // GET LIST CHAPTERS BY COURSE ID : GET /api/chapters/course/:courseId
 chapterRouter.get(
   '/course/:id',

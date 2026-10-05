@@ -27,7 +27,7 @@ export const unmarkLessonCompleteController = asyncHandler(async (req: Request, 
 // get progess by course
 export const getProgressByCourseController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { userId } = req.user as { userId: string }
-  const { courseId } = req.params
+  const courseId = String(req.params.courseId)
   const result = await getProgressByCourseService({ userId, courseId })
   return res.status(result.statusCode || 200).json(result)
 })

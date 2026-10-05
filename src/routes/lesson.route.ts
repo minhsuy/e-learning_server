@@ -1,14 +1,18 @@
-import express, { Request, Response } from 'express'
+import express from 'express'
 import {
   createLessonController,
   deleteLessonController,
   getLessonsByChapterController,
   updateLessonController
 } from '~/controller/lesson.controller'
-import { courseIdValidator } from '~/middlewares/course.middleware'
-import { chapterIdValidator, createLessonValidator, updateLessonValidator } from '~/middlewares/lesson.middleware'
+import {
+  chapterIdValidator,
+  createLessonValidator,
+  lessonIdValidator,
+  updateLessonValidator
+} from '~/middlewares/lesson.middleware'
 import { handleValidationErrors } from '~/middlewares/validate'
-import { isAdmin, isTeacherOrAdmin } from '~/middlewares/verifyRole'
+import { isTeacherOrAdmin } from '~/middlewares/verifyRole'
 import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const lessonRouter = express.Router()
@@ -38,11 +42,12 @@ lessonRouter.delete(
   '/:id',
   verifyAccessToken,
   isTeacherOrAdmin,
-  chapterIdValidator,
+  lessonIdValidator,
   handleValidationErrors,
   deleteLessonController
 )
 
-// get lesson by chapter
+// GET LESSON BY CHAPTER
 lessonRouter.get('/chapter/:chapterId', chapterIdValidator, handleValidationErrors, getLessonsByChapterController)
+
 export default lessonRouter

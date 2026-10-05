@@ -6,31 +6,45 @@ import {
   getQuizSubmissionService,
   submitQuizService
 } from '~/services/quizSubmission.service'
+import { SubmitQuizInput } from '~/models/quizSubmission.model'
 
-export const submitQuizController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { userId } = req.user as { userId: string; role: string }
-  const { quizId, answers } = req.body
+/**
+ * Controller: POST /api/submissions (submit quiz)
+ */
+export const submitQuizController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const user = req.user as { userId?: string; id?: string; role?: string } | undefined
+  const userId = user?.userId || user?.id || ''
+  const { quizId, answers } = req.body as SubmitQuizInput
 
   const result = await submitQuizService({ userId, quizId, answers })
-  return res.status(result.success ? 200 : result.statusCode || 400).json(result)
+  res.status(result.success ? 200 : result.statusCode || 400).json(result)
 })
 
-// get quiz
-export const getQuizSubmissionController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { userId } = req.user as { userId: string }
-  const { quizId } = req.params
+/**
+ * Controller: GET /api/submissions/:quizId (student view submission)
+ */
+export const getQuizSubmissionController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const user = req.user as { userId?: string; id?: string } | undefined
+  const userId = user?.userId || user?.id || ''
+  const quizId = Array.isArray(req.params.quizId) ? req.params.quizId[0] : req.params.quizId
   const result = await getQuizSubmissionService(quizId, userId)
-  res.status(result.success ? 200 : 400).json(result)
+  res.status(result.success ? 200 : result.statusCode || 400).json(result)
 })
-// get all quiz foor teacher
-export const getAllQuizSubmissionsController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { quizId } = req.params
+
+/**
+ * Controller: GET /api/submissions/teacher/:quizId (teacher view all submissions)
+ */
+export const getAllQuizSubmissionsController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const quizId = Array.isArray(req.params.quizId) ? req.params.quizId[0] : req.params.quizId
   const result = await getAllQuizSubmissionsService(quizId)
-  return res.status(result.success ? 200 : result.statusCode || 400).json(result)
+  res.status(result.success ? 200 : result.statusCode || 400).json(result)
 })
-// get quiz analysis
-export const getQuizAnalyticsController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const { quizId } = req.params
+
+/**
+ * Controller: GET /api/submissions/teacher/analytics/:quizId (teacher view quiz analytics)
+ */
+export const getQuizAnalyticsController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const quizId = Array.isArray(req.params.quizId) ? req.params.quizId[0] : req.params.quizId
   const result = await getQuizAnalyticsService(quizId)
-  return res.status(result.success ? 200 : result.statusCode || 400).json(result)
+  res.status(result.success ? 200 : result.statusCode || 400).json(result)
 })

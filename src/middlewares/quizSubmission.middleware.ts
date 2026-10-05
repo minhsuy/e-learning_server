@@ -1,11 +1,16 @@
 import { body, param } from 'express-validator'
-import { Types } from 'mongoose'
+import { isValidUUID } from '~/utils/uuid'
 
+/**
+ * Validator chain for POST /api/submissions (submit quiz)
+ * Strictly verifies UUID format for quizId and answers.*.question
+ * Validates presence of answers array and selectedAnswer
+ */
 export const submitQuizValidator = [
   body('quizId')
     .notEmpty()
     .withMessage('Quiz ID is required')
-    .custom((value) => Types.ObjectId.isValid(value))
+    .custom((value) => isValidUUID(value))
     .withMessage('Invalid quiz ID'),
 
   body('answers').isArray({ min: 1 }).withMessage('Answers array is required'),
@@ -13,7 +18,7 @@ export const submitQuizValidator = [
   body('answers.*.question')
     .notEmpty()
     .withMessage('Question ID is required')
-    .custom((value) => Types.ObjectId.isValid(value))
+    .custom((value) => isValidUUID(value))
     .withMessage('Invalid question ID'),
 
   body('answers.*.selectedAnswer').notEmpty().withMessage('Selected answer is required')

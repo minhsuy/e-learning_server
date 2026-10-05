@@ -1,52 +1,110 @@
-import { FilterQuery, Types } from 'mongoose'
 import slugify from 'slugify'
-import CategoryModel from '~/models/category.model'
+import { Prisma } from '@prisma/client'
+import { PrismaTransactionClient } from '~/config/prisma'
+import {
+  addCategory,
+  findCategoryById,
+  findCategoryBySlug,
+  findCategoriesWithPagination,
+  isCategoryNameTaken,
+  isCategorySlugTaken,
+  softDeleteCategory,
+  updateCategory
+} from '~/repositories/category.repository'
 import { ListQuery } from '~/types/type'
+import { isValidUUID, withCompatId } from '~/utils/uuid'
+import { mapPrismaError } from '~/utils/prismaError'
+import {
+  createCategoryInputSchema,
+  updateCategoryInputSchema,
+  CreateCategoryInput,
+  UpdateCategoryInput
+} from '~/models/category.model'
 
+/**
+ * Checks if a string is a 24-character hexadecimal MongoDB ObjectId.
+ * Used for backward compatibility with legacy user identity tokens.
+ */
+function isLegacyObjectId(id: string): boolean {
+  return /^[0-9a-fA-F]{24}$/.test(id)
+}
+
+// CREATE CATEGORY
 export const createCategoryService = async ({
   payload,
   created_by
 }: {
-  payload: Record<string, any>
+  payload: CreateCategoryInput | Record<string, any>
   created_by: string
-}) => {
-  if (!created_by || !Types.ObjectId.isValid(created_by)) {
+}, tx?: PrismaTransactionClient) => {
+  if (!created_by || (!isValidUUID(created_by) && !isLegacyObjectId(created_by))) {
     return { success: false, statusCode: 401, message: 'Invalid user' }
   }
 
-  const { name, slug, description = '' } = payload
+  const parseResult = createCategoryInputSchema.safeParse(payload)
+  if (!parseResult.success) {
+    return { success: false, statusCode: 400, message: parseResult.error.errors[0]?.message || 'Category name is required' }
+  }
+
+  const { name, slug, description = '' } = parseResult.data
 
   const finalSlug = slug ? slugify(slug, { lower: true, strict: true }) : slugify(name, { lower: true, strict: true })
 
-  const slugExists = await CategoryModel.exists({ slug: finalSlug })
-  if (slugExists) {
-    return {
-      success: false,
-      statusCode: 409,
-      errorCode: 'SLUG_CONFLICT',
-      message: 'Slug already exists. Please use another slug or name.'
+  try {
+    const slugExists = await isCategorySlugTaken(finalSlug, undefined, tx)
+    if (slugExists) {
+      return {
+        success: false,
+        statusCode: 409,
+        errorCode: 'SLUG_CONFLICT',
+        message: 'Slug already exists. Please use another slug or name.'
+      }
     }
-  }
 
-  const category = await CategoryModel.create({
-    name,
-    slug: finalSlug,
-    description,
-    created_by: new Types.ObjectId(created_by)
-  })
+    const nameExists = await isCategoryNameTaken(name, undefined, tx)
+    if (nameExists) {
+      return {
+        success: false,
+        statusCode: 409,
+        errorCode: 'NAME_CONFLICT',
+        message: 'Category name already exists'
+      }
+    }
 
-  return {
-    success: true,
-    message: 'Category created successfully!',
-    data: category
+    const createData: Prisma.CategoryCreateInput = {
+      name,
+      slug: finalSlug,
+      description,
+      ...(isValidUUID(created_by) ? { createdBy: { connect: { id: created_by } } } : {})
+    }
+
+    const category = await addCategory(createData, tx)
+
+    return {
+      success: true,
+      message: 'Category created successfully!',
+      data: withCompatId({
+        ...category,
+        _destroy: category.isDestroyed
+      })
+    }
+  } catch (error) {
+    const mapped = mapPrismaError(error)
+    if (mapped) {
+      return {
+        success: false,
+        statusCode: mapped.statusCode,
+        errorCode: mapped.errorCode,
+        message: mapped.message
+      }
+    }
+    throw error
   }
 }
 
-// DELETE CATEGORY
-export const deleteCategoryService = async (id: string) => {
-  const category = await CategoryModel.findById(id)
-
-  if (!category) {
+// DELETE CATEGORY (Soft Delete)
+export const deleteCategoryService = async (id: string, tx?: PrismaTransactionClient) => {
+  if (!isValidUUID(id)) {
     return {
       success: false,
       statusCode: 404,
@@ -54,101 +112,206 @@ export const deleteCategoryService = async (id: string) => {
     }
   }
 
-  if (category._destroy) {
-    return {
-      success: false,
-      statusCode: 400,
-      message: 'Category already deleted'
+  try {
+    const category = await findCategoryById(id, tx)
+
+    if (!category) {
+      return {
+        success: false,
+        statusCode: 404,
+        message: 'Category not found'
+      }
     }
-  }
 
-  category._destroy = true
-  await category.save()
+    if (category.isDestroyed) {
+      return {
+        success: false,
+        statusCode: 400,
+        message: 'Category already deleted'
+      }
+    }
 
-  return {
-    success: true,
-    message: 'Category deleted successfully!',
-    data: category
+    const updatedCategory = await softDeleteCategory(id, tx)
+
+    return {
+      success: true,
+      message: 'Category deleted successfully!',
+      data: withCompatId({
+        ...updatedCategory,
+        _destroy: updatedCategory.isDestroyed
+      })
+    }
+  } catch (error) {
+    const mapped = mapPrismaError(error)
+    if (mapped) {
+      return {
+        success: false,
+        statusCode: mapped.statusCode,
+        errorCode: mapped.errorCode,
+        message: mapped.message
+      }
+    }
+    throw error
   }
 }
 
-//  UPDATE CATEGORY
-export const updateCategoryService = async ({ id, payload }: { id: string; payload: Record<string, any> }) => {
-  const category = await CategoryModel.findById(id)
-  if (!category) {
+// UPDATE CATEGORY
+export const updateCategoryService = async ({
+  id,
+  payload
+}: {
+  id: string
+  payload: UpdateCategoryInput | Record<string, any>
+}, tx?: PrismaTransactionClient) => {
+  if (!isValidUUID(id)) {
     return { success: false, statusCode: 404, message: 'Category not found' }
   }
 
-  if (payload.name) category.name = payload.name
-  if (payload.slug) {
-    const finalSlug = slugify(payload.slug, { lower: true, strict: true })
-    const slugExists = await CategoryModel.findOne({ slug: finalSlug })
-    if (slugExists) {
+  const parseResult = updateCategoryInputSchema.safeParse(payload)
+  if (!parseResult.success) {
+    return {
+      success: false,
+      statusCode: 400,
+      message: parseResult.error.errors[0]?.message || 'Invalid category update payload'
+    }
+  }
+  const validatedPayload = parseResult.data
+
+  try {
+    const category = await findCategoryById(id, tx)
+    if (!category) {
+      return { success: false, statusCode: 404, message: 'Category not found' }
+    }
+
+    const updateData: Prisma.CategoryUpdateInput = {}
+
+    if (validatedPayload.name) {
+      const nameConflict = await isCategoryNameTaken(validatedPayload.name, id, tx)
+      if (nameConflict) {
+        return {
+          success: false,
+          statusCode: 409,
+          errorCode: 'NAME_CONFLICT',
+          message: 'Category name already exists'
+        }
+      }
+      updateData.name = validatedPayload.name
+    }
+
+    if (validatedPayload.slug) {
+      const finalSlug = slugify(validatedPayload.slug, { lower: true, strict: true })
+      const slugExists = await isCategorySlugTaken(finalSlug, id, tx)
+      if (slugExists) {
+        return {
+          success: false,
+          statusCode: 409,
+          errorCode: 'SLUG_CONFLICT',
+          message: 'Slug already exists'
+        }
+      }
+      updateData.slug = finalSlug
+    }
+
+    if (validatedPayload.description !== undefined) {
+      updateData.description = validatedPayload.description
+    }
+
+    if (validatedPayload._destroy !== undefined) {
+      updateData.isDestroyed = Boolean(validatedPayload._destroy)
+    } else if (validatedPayload.isDestroyed !== undefined) {
+      updateData.isDestroyed = Boolean(validatedPayload.isDestroyed)
+    }
+
+    const updatedCategory = await updateCategory(id, updateData, tx)
+
+    return {
+      success: true,
+      message: 'Category updated successfully!',
+      data: withCompatId({
+        ...updatedCategory,
+        _destroy: updatedCategory.isDestroyed
+      })
+    }
+  } catch (error) {
+    const mapped = mapPrismaError(error)
+    if (mapped) {
       return {
         success: false,
-        statusCode: 409,
-        errorCode: 'SLUG_CONFLICT',
-        message: 'Slug already exists'
+        statusCode: mapped.statusCode,
+        errorCode: mapped.errorCode,
+        message: mapped.message
       }
     }
-    category.slug = finalSlug
-  }
-  if (payload.description !== undefined) category.description = payload.description
-  if (payload._destroy !== undefined) category._destroy = payload._destroy
-
-  await category.save()
-
-  return {
-    success: true,
-    message: 'Category updated successfully!',
-    data: category
+    throw error
   }
 }
 
-// public --------------------------------------------------
-export const getCategoriesService = async (params: ListQuery) => {
+// PUBLIC: GET CATEGORIES
+export const getCategoriesService = async (params: ListQuery, tx?: PrismaTransactionClient) => {
   const { page = 1, limit = 20, search = '' } = params
-  const skip = (page - 1) * limit
 
-  const filter: FilterQuery<typeof CategoryModel> = { _destroy: false }
+  const { categories, total, page: pageNum, limit: limitNum, totalPages } =
+    await findCategoriesWithPagination(
+      {
+        page: Number(page),
+        limit: Number(limit),
+        search: search ? String(search) : undefined,
+        isDestroyed: false
+      },
+      tx
+    )
 
-  if (search) {
-    filter.$or = [{ name: { $regex: search, $options: 'i' } }]
-  }
-  const [categories, total] = await Promise.all([
-    CategoryModel.find(filter)
-      .select('name slug description createdAt')
-      .skip(skip)
-      .limit(Number(limit))
-      .sort({ createdAt: -1 }),
-    CategoryModel.countDocuments(filter)
-  ])
+  const compatCategories = categories.map((cat) =>
+    withCompatId({
+      ...cat,
+      _destroy: false
+    })
+  )
 
   return {
     success: true,
     message: 'Fetched categories successfully!',
     data: {
-      categories,
+      categories: compatCategories,
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
+        page: Number(pageNum),
+        limit: Number(limitNum),
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages
       }
     }
   }
 }
 
-export const getCategoryDetailService = async (slug: string) => {
-  const category = await CategoryModel.findOne({ slug, _destroy: false }).select('name slug description createdAt')
+// PUBLIC: GET CATEGORY DETAIL
+export const getCategoryDetailService = async (slug: string, tx?: PrismaTransactionClient) => {
+  const category = await findCategoryBySlug(
+    slug,
+    {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        createdAt: true,
+        isDestroyed: true
+      }
+    },
+    tx
+  )
 
-  if (!category) {
+  if (!category || category.isDestroyed) {
     return { success: false, statusCode: 404, message: 'Category not found' }
   }
+
+  const { isDestroyed, ...publicData } = category
 
   return {
     success: true,
     message: 'Fetched category detail successfully!',
-    data: category
+    data: withCompatId({
+      ...publicData,
+      _destroy: false
+    })
   }
 }

@@ -40,7 +40,7 @@ teacherRouter.put(
 
 // Delete course (Teacher) DELETE /api/teachers/courses/:id
 teacherRouter.delete(
-  'courses/:id',
+  '/courses/:id',
   verifyAccessToken,
   isTeacher,
   courseIdValidator,

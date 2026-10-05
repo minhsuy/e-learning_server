@@ -12,14 +12,14 @@ export const createQuestionController = asyncHandler(async (req: Request, res: R
 
 export const updateQuestionController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { userId, role } = req.user as { userId: string; role: string }
-  const { questionId } = req.params
+  const questionId = Array.isArray(req.params.questionId) ? req.params.questionId[0] : req.params.questionId
   const result = await updateQuestionService({ userId, role, questionId, payload: req.body })
   return res.status(result.success ? 200 : result.statusCode || 400).json(result)
 })
 
 export const deleteQuestionController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { userId, role } = req.user as { userId: string; role: string }
-  const { questionId } = req.params
+  const questionId = Array.isArray(req.params.questionId) ? req.params.questionId[0] : req.params.questionId
   const result = await deleteQuestionService({ userId, role, questionId })
   return res.status(result.success ? 200 : result.statusCode || 400).json(result)
 })

@@ -7,12 +7,13 @@ export const createMessageController = asyncHandler(async (req: Request, res: Re
   const { conversationId, content, type } = req.body
 
   const result = await createMessageService({ senderId: userId, conversationId, content, type })
-  res.status(200).json(result)
+  res.status(result.statusCode || 200).json(result)
 })
 
 export const getMessagesByConversationController = asyncHandler(async (req: Request, res: Response) => {
-  const { conversationId } = req.params
+  const { userId } = req.user as { userId: string }
+  const conversationId = String(req.params.conversationId)
 
-  const result = await getMessagesByConversationService(conversationId)
+  const result = await getMessagesByConversationService(conversationId, userId)
   res.status(result.statusCode || 200).json(result)
 })

@@ -1,6 +1,6 @@
 import { body, param, query } from 'express-validator'
-import mongoose from 'mongoose'
 import { CourseLevel, CourseStatus, CourseType } from '~/types/enum'
+import { isValidUUID, validateUUIDParam } from '~/utils/uuid'
 
 export const createCourseValidator = [
   body('title').trim().isLength({ min: 3 }).withMessage('Title must be at least 3 characters'),
@@ -15,7 +15,10 @@ export const createCourseValidator = [
   body('intro_url').optional({ checkFalsy: true }).isURL().withMessage('Intro URL must be a valid URL'),
   body('description').optional({ checkFalsy: true }).trim(),
 
-  body('category').optional({ checkFalsy: true }).isMongoId().withMessage('Invalid category id'),
+  body('category')
+    .optional({ checkFalsy: true })
+    .custom((value) => isValidUUID(value))
+    .withMessage('Invalid category id'),
 
   body('type').optional({ checkFalsy: true }).isIn(Object.values(CourseType)).withMessage('Invalid course type'),
   body('price').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Price must be >= 0'),
@@ -42,7 +45,10 @@ export const listPublicCoursesValidator = [
   query('limit').optional().isInt({ min: 1 }).toInt(),
   query('search').optional().trim(),
 
-  query('category').optional().isMongoId(),
+  query('category')
+    .optional()
+    .custom((value) => isValidUUID(value))
+    .withMessage('Invalid category id'),
   query('level').optional().isIn(Object.values(CourseLevel)),
   query('type').optional().isIn(Object.values(CourseType)),
 
@@ -53,7 +59,10 @@ export const listPublicCoursesValidator = [
 
   // riêng cho admin
   query('status').optional().isIn(Object.values(CourseStatus)),
-  query('author').optional().isMongoId(),
+  query('author')
+    .optional()
+    .custom((value) => isValidUUID(value))
+    .withMessage('Invalid author id'),
   query('_destroy').optional().isBoolean().toBoolean()
 ]
 
@@ -61,7 +70,7 @@ export const updateCourseValidator = [
   param('id')
     .notEmpty()
     .withMessage('Course ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom(validateUUIDParam)
     .withMessage('Invalid course ID'),
 
   body('title')
@@ -82,7 +91,10 @@ export const updateCourseValidator = [
 
   body('description').optional({ checkFalsy: true }).trim(),
 
-  body('category').optional({ checkFalsy: true }).isMongoId().withMessage('Invalid category id'),
+  body('category')
+    .optional({ checkFalsy: true })
+    .custom((value) => isValidUUID(value))
+    .withMessage('Invalid category id'),
 
   body('type').optional({ checkFalsy: true }).isIn(Object.values(CourseType)).withMessage('Invalid course type'),
 
@@ -112,7 +124,7 @@ export const courseIdValidator = [
   param('id')
     .notEmpty()
     .withMessage('Course ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom(validateUUIDParam)
     .withMessage('Invalid course ID')
 ]
 
@@ -120,7 +132,7 @@ export const updateCourseByAdminValidator = [
   param('id')
     .notEmpty()
     .withMessage('Course ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom(validateUUIDParam)
     .withMessage('Invalid course ID'),
 
   body('title')
@@ -141,7 +153,10 @@ export const updateCourseByAdminValidator = [
 
   body('description').optional({ checkFalsy: true }).trim(),
 
-  body('category').optional({ checkFalsy: true }).isMongoId().withMessage('Invalid category id'),
+  body('category')
+    .optional({ checkFalsy: true })
+    .custom((value) => isValidUUID(value))
+    .withMessage('Invalid category id'),
 
   body('type').optional({ checkFalsy: true }).isIn(Object.values(CourseType)).withMessage('Invalid course type'),
 
@@ -165,4 +180,18 @@ export const updateCourseByAdminValidator = [
   // dangerous
   body('rating').not().exists(),
   body('author').not().exists()
+]
+
+export const updateCourseStatusValidator = [
+  param('id')
+    .notEmpty()
+    .withMessage('Course ID is required')
+    .custom(validateUUIDParam)
+    .withMessage('Invalid course ID'),
+
+  body('status')
+    .notEmpty()
+    .withMessage('Course status is required')
+    .isIn(Object.values(CourseStatus))
+    .withMessage('Invalid course status')
 ]

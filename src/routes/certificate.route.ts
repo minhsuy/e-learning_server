@@ -1,9 +1,18 @@
-import { handleValidationErrors } from '~/middlewares/validate'
-import express, { Request, Response } from 'express'
-import { verifyAccessToken } from '~/middlewares/verifyToken'
-import { createQuizValidator, quizIdValidator, updateQuizValidator } from '~/middlewares/quiz.middleware'
+import express from 'express'
 import { createCertificateController } from '~/controller/certificate.controller'
+import { createCertificateValidator } from '~/middlewares/certificate.middleware'
+import { handleValidationErrors } from '~/middlewares/validate'
+import { verifyAccessToken } from '~/middlewares/verifyToken'
 
 const certificateRouter = express.Router()
-certificateRouter.post('/', verifyAccessToken, handleValidationErrors, createCertificateController)
+
+// POST /api/certificates
+certificateRouter.post(
+  '/',
+  verifyAccessToken,
+  createCertificateValidator,
+  handleValidationErrors,
+  createCertificateController
+)
+
 export default certificateRouter

@@ -1,4 +1,5 @@
 import { VerifyOptions } from 'jsonwebtoken'
+import type { CreateTeacherInput } from '~/models/user.model'
 
 export interface SocialLinks {
   facebook?: string
@@ -26,6 +27,7 @@ export interface ServiceResponse<T = any> {
   access_token?: string
   refresh_token?: string
   statusCode?: number
+  errors?: Record<string, any>
 }
 
 export interface UpdateMeParams {
@@ -51,21 +53,7 @@ export interface GetAllUsersParams {
   sortBy?: string
 }
 
-export interface ICreateTeacherInput {
-  payload: {
-    username: string
-    email: string
-    password: string
-    avatar?: string
-    phone?: string
-    bio?: string
-    socialLinks?: {
-      facebook?: string
-      instagram?: string
-      github?: string
-    }
-  }
-}
+export type ICreateTeacherInput = CreateTeacherInput
 export type ListQuery = {
   page?: number
   limit?: number

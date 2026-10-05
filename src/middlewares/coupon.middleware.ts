@@ -1,19 +1,11 @@
 import { body, param, query } from 'express-validator'
-import mongoose from 'mongoose'
-import CouponModel from '~/models/coupon.model'
 import { ECouponType } from '~/types/enum'
+import { isValidUUID } from '~/utils/uuid'
 
 export const createCouponValidator = [
   body('title').notEmpty().withMessage('Title is required'),
 
-  body('code')
-    .notEmpty()
-    .withMessage('Coupon code is required')
-    .custom(async (value) => {
-      const exists = await CouponModel.findOne({ code: value })
-      if (exists) throw new Error('Coupon code already exists')
-      return true
-    }),
+  body('code').notEmpty().withMessage('Coupon code is required'),
 
   body('value').isFloat({ min: 1 }).withMessage('Value must be a positive number'),
 
@@ -26,11 +18,12 @@ export const createCouponValidator = [
 
   body('courses').optional().isArray().withMessage('Courses must be an array of course IDs')
 ]
+
 export const updateCouponValidator = [
   param('id')
     .notEmpty()
     .withMessage('Coupon ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom((value) => isValidUUID(value))
     .withMessage('Invalid Coupon ID'),
 
   body('title').optional().isLength({ min: 2 }).withMessage('Title must be at least 2 characters'),
@@ -49,13 +42,15 @@ export const updateCouponValidator = [
 
   body('active').optional().isBoolean().withMessage('Active must be true/false')
 ]
+
 export const couponIdValidator = [
   param('id')
     .notEmpty()
     .withMessage('Coupon ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom((value) => isValidUUID(value))
     .withMessage('Invalid Coupon ID')
 ]
+
 export const listCouponsValidator = [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be >= 1'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
@@ -63,7 +58,12 @@ export const listCouponsValidator = [
   query('active').optional().isBoolean().withMessage('Active must be true/false'),
   query('sortBy').optional().isIn(['createdAt', 'updatedAt', 'title']).withMessage('Invalid sortBy')
 ]
+
 export const checkCouponValidator = [
   body('code').notEmpty().withMessage('Coupon code is required'),
-  body('courseId').notEmpty().isMongoId().withMessage('Course ID is required')
+  body('courseId')
+    .notEmpty()
+    .withMessage('Course ID is required')
+    .custom((value) => isValidUUID(value))
+    .withMessage('Invalid Course ID')
 ]

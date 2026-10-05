@@ -1,6 +1,6 @@
 import { body, param } from 'express-validator'
-import mongoose from 'mongoose'
 import { LessonType } from '~/types/enum'
+import { validateUUIDParam } from '~/utils/uuid'
 
 export const createLessonValidator = [
   body('title')
@@ -14,13 +14,13 @@ export const createLessonValidator = [
   body('chapter')
     .notEmpty()
     .withMessage('Chapter ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom(validateUUIDParam)
     .withMessage('Invalid Chapter ID'),
 
   body('course')
     .notEmpty()
     .withMessage('Course ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom(validateUUIDParam)
     .withMessage('Invalid Course ID'),
 
   body('type').optional({ checkFalsy: true }).isIn(Object.values(LessonType)).withMessage('Invalid lesson type'),
@@ -33,11 +33,12 @@ export const createLessonValidator = [
 
   body('isDemo').optional().isBoolean().withMessage('isDemo must be true/false')
 ]
+
 export const updateLessonValidator = [
   param('id')
     .notEmpty()
     .withMessage('Lesson ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom(validateUUIDParam)
     .withMessage('Invalid Lesson ID'),
 
   body('title').optional({ checkFalsy: true }).isLength({ min: 3 }).withMessage('Title must be at least 3 characters'),
@@ -52,10 +53,19 @@ export const updateLessonValidator = [
 
   body('isDemo').optional().isBoolean().withMessage('isDemo must be true/false')
 ]
+
 export const chapterIdValidator = [
   param('chapterId')
     .notEmpty()
     .withMessage('Chapter ID is required')
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .custom(validateUUIDParam)
     .withMessage('Invalid Chapter ID')
+]
+
+export const lessonIdValidator = [
+  param('id')
+    .notEmpty()
+    .withMessage('Lesson ID is required')
+    .custom(validateUUIDParam)
+    .withMessage('Invalid Lesson ID')
 ]

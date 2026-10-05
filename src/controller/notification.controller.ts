@@ -14,7 +14,7 @@ export const getNotificationsController = asyncHandler(async (req: Request, res:
 
 export const markNotificationReadController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { userId } = req.user as { userId: string }
-  const { id } = req.params
+  const { id } = req.params as { id: string }
 
   const result = await markNotificationReadService(id, userId)
   return res.status(result.statusCode || 200).json(result)
