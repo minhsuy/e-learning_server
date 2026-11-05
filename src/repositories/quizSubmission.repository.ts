@@ -73,6 +73,28 @@ export type TeacherSubmissionListPayload = Prisma.QuizSubmissionGetPayload<{
   select: typeof TEACHER_SUBMISSION_LIST_SELECT
 }>
 
+export const STUDENT_QUIZ_SUBMISSION_SELECT = {
+  id: true,
+  quizId: true,
+  userId: true,
+  score: true,
+  totalPoints: true,
+  percentage: true,
+  completedAt: true,
+  createdAt: true,
+  quiz: {
+    select: {
+      id: true,
+      title: true,
+      passingGrade: true
+    }
+  }
+} as const satisfies Prisma.QuizSubmissionSelect
+
+export type StudentQuizSubmissionPayload = Prisma.QuizSubmissionGetPayload<{
+  select: typeof STUDENT_QUIZ_SUBMISSION_SELECT
+}>
+
 // ==========================================
 // 2. INPUT DATA TYPES
 // ==========================================
@@ -177,6 +199,29 @@ export const findSubmissionsForAnalytics = async (
     select: {
       score: true,
       completedAt: true
+    }
+  })
+}
+
+/**
+ * Find all quiz submissions for a student within a specific course.
+ */
+export const findSubmissionsByUserAndCourse = async (
+  userId: string,
+  courseId: string,
+  tx?: PrismaTransactionClient
+): Promise<StudentQuizSubmissionPayload[]> => {
+  const client = tx || prisma
+  return client.quizSubmission.findMany({
+    where: {
+      userId,
+      quiz: {
+        courseId
+      }
+    },
+    select: STUDENT_QUIZ_SUBMISSION_SELECT,
+    orderBy: {
+      completedAt: 'desc'
     }
   })
 }

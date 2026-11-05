@@ -1,0 +1,270 @@
+{
+  "generatedAt": "2026-10-29T12:11:28.944Z",
+  "executionDurationMs": 950,
+  "databaseBaseline": {
+    "totalCourses": 648,
+    "activeCourses": 647,
+    "destroyedCourses": 1,
+    "approvedCourses": 610,
+    "pendingCourses": 30,
+    "rejectedCourses": 8,
+    "totalCategories": 30,
+    "activeCategories": 22,
+    "destroyedCategories": 8
+  },
+  "eligibilitySummary": {
+    "totalApprovedCoursesInDb": 610,
+    "eligibleCoursesCount": 608,
+    "expectedBaseline": 610,
+    "delta": -2,
+    "excludedReasons": {
+      "approvedSoftDeletedCoursesCount": 1,
+      "approvedSoftDeletedCourses": [
+        {
+          "id": "19253682-4aa1-51c7-82cc-076d6c37772c",
+          "title": "Phục Chế và Nâng Cấp Chất Lượng Hình Ảnh Bằng Siêu Độ Phân Giải (Super Resolution)",
+          "status": "APPROVED",
+          "isDestroyed": true,
+          "categoryId": "084d6053-7823-4cb8-a7e7-7dba3e6a78bf"
+        }
+      ],
+      "approvedNullCategoryCoursesCount": 1,
+      "approvedNullCategoryCourses": [
+        {
+          "id": "fdf556cd-89f3-4aad-a041-cb74fdc2a0f2",
+          "title": "Course Hotfix 1793015610339",
+          "status": "APPROVED",
+          "isDestroyed": false,
+          "categoryId": null
+        }
+      ],
+      "approvedDestroyedCategoryCoursesCount": 0
+    }
+  },
+  "completeness": {
+    "activeCategoriesInDb": 22,
+    "representedCategoriesCount": 20,
+    "categories": [
+      {
+        "id": "fc5d66a4-7468-5328-a6a9-16c3a9e49881",
+        "name": "Lập trình web",
+        "count": 87
+      },
+      {
+        "id": "dddf433f-347b-5024-b70d-2398aaed3660",
+        "name": "Lập trình",
+        "count": 86
+      },
+      {
+        "id": "084d6053-7823-4cb8-a7e7-7dba3e6a78bf",
+        "name": "Trí tuệ nhân tạo (AI)",
+        "count": 83
+      },
+      {
+        "id": "2ec199fc-a7e0-531e-b79d-14b479f74853",
+        "name": "Khoa học dữ liệu",
+        "count": 82
+      },
+      {
+        "id": "fbbde717-fb63-5dde-b45b-4041909976d9",
+        "name": "Digital Marketing & Tăng trưởng",
+        "count": 22
+      },
+      {
+        "id": "ebfd0b83-65bd-5393-8529-e81a395a4cd1",
+        "name": "Thiết kế UI/UX & Sản phẩm số",
+        "count": 20
+      },
+      {
+        "id": "8b19f844-2304-567f-b090-963eb0c2a7fd",
+        "name": "Ngoại ngữ ứng dụng & Giao tiếp quốc tế",
+        "count": 20
+      },
+      {
+        "id": "289121d2-c54f-5b9e-a993-dd909a430b91",
+        "name": "Quản trị kinh doanh & Khởi nghiệp",
+        "count": 20
+      },
+      {
+        "id": "626ff628-88f2-5436-9ad4-ec547e86547a",
+        "name": "Phát triển ứng dụng di động",
+        "count": 18
+      },
+      {
+        "id": "b7f79eec-ca57-5122-95b5-089e4629d0d9",
+        "name": "Phát triển bản thân & Kỹ năng mềm",
+        "count": 18
+      },
+      {
+        "id": "ee865886-b009-5b54-bcee-f055c659c6fb",
+        "name": "Tài chính, Kế toán & Đầu tư",
+        "count": 18
+      },
+      {
+        "id": "9f6485ab-dc41-54c7-a8a3-796b649a37be",
+        "name": "Tin học văn phòng & Tự động hóa",
+        "count": 18
+      },
+      {
+        "id": "de33e051-5616-5b78-b31b-17e40e6b3037",
+        "name": "Điện toán đám mây & DevOps",
+        "count": 18
+      },
+      {
+        "id": "7afb937c-ae97-5bae-bd7d-f377ab0bf799",
+        "name": "Cơ sở dữ liệu & Kỹ thuật dữ liệu",
+        "count": 16
+      },
+      {
+        "id": "88d6470a-af9a-5883-aa07-a2bb3d78c8f9",
+        "name": "Quản lý dự án & Vận hành Agile",
+        "count": 16
+      },
+      {
+        "id": "97739f60-fb34-5cb7-87b1-11d2585fc58d",
+        "name": "An ninh mạng & Bảo mật",
+        "count": 16
+      },
+      {
+        "id": "b8fec287-f686-5239-b780-5f4b2fff2947",
+        "name": "Thiết kế đồ họa & Truyền thông thị giác",
+        "count": 16
+      },
+      {
+        "id": "8c0b20dd-4b33-56bd-9067-07a230795e49",
+        "name": "Nhiếp ảnh, Dựng phim & Sáng tạo nội dung",
+        "count": 14
+      },
+      {
+        "id": "92cc10e6-324b-5a40-bf0b-942cc4c65ce6",
+        "name": "Âm nhạc & Nghệ thuật sáng tạo",
+        "count": 10
+      },
+      {
+        "id": "ff50bad7-4dbd-5bcd-a225-533eaf3f8cb5",
+        "name": "Sức khỏe, Thể chất & Lối sống",
+        "count": 10
+      }
+    ],
+    "teachers": {
+      "teacher02": {
+        "username": "teacher02",
+        "count": 185,
+        "role": "TEACHER"
+      },
+      "admin_tmdemy": {
+        "username": "admin_tmdemy",
+        "count": 94,
+        "role": "ADMIN"
+      },
+      "teacher_cntt": {
+        "username": "teacher_cntt",
+        "count": 181,
+        "role": "TEACHER"
+      },
+      "giaovientrungquoc": {
+        "username": "giaovientrungquoc",
+        "count": 148,
+        "role": "TEACHER"
+      }
+    },
+    "levels": {
+      "BEGINNER": 181,
+      "INTERMEDIATE": 250,
+      "ADVANCED": 177
+    },
+    "types": {
+      "FREE": 54,
+      "PAID": 554
+    },
+    "priceRanges": {
+      "free": 56,
+      "under200k": 65,
+      "from200kTo500k": 276,
+      "from500kTo1M": 194,
+      "over1M": 17
+    },
+    "missingFields": {
+      "image": 0,
+      "introUrl": 271,
+      "description": 0,
+      "techniques": 10,
+      "requirements": 0,
+      "benefits": 0,
+      "documents": 10
+    }
+  },
+  "textQuality": {
+    "wordCountMethodology": "Whitespace tokenization of Vietnamese space-delimited tokens/syllables",
+    "titleCharacters": {
+      "min": 20,
+      "max": 109,
+      "mean": 69.34,
+      "median": 69,
+      "stdDev": 10.89
+    },
+    "titleWords": {
+      "min": 2,
+      "max": 20,
+      "mean": 13.38,
+      "median": 13,
+      "stdDev": 2.31
+    },
+    "descriptionCharacters": {
+      "min": 34,
+      "max": 1804,
+      "mean": 748.49,
+      "median": 147,
+      "stdDev": 699.77
+    },
+    "descriptionWords": {
+      "min": 7,
+      "max": 371,
+      "mean": 150.71,
+      "median": 30,
+      "stdDev": 142.64
+    },
+    "shortDescriptionsCount": 338,
+    "veryShortDescriptionsCount": 338,
+    "overallVocabularySize": 6168
+  },
+  "duplicates": {
+    "exactTitlesCount": 1,
+    "exactDescriptionsCount": 0,
+    "nearDuplicatesCount": 0,
+    "jaccardThreshold": 0.8,
+    "topNearDuplicatePairs": [],
+    "exactDuplicateTitlePairs": [
+      {
+        "courseIdA": "850bba28-aa30-5fc7-af57-eb568a991cb1",
+        "titleA": "Giám Sát Hệ Thống Toàn Diện Với Prometheus và Grafana",
+        "categoryA": "Điện toán đám mây & DevOps",
+        "courseIdB": "e5c7f365-02a7-5db9-84d1-89b2f451fd76",
+        "titleB": "Giám Sát Hệ Thống Toàn Diện Với Prometheus và Grafana",
+        "categoryB": "Lập trình",
+        "similarity": 1,
+        "type": "EXACT_TITLE"
+      }
+    ]
+  },
+  "syntheticComparison": {
+    "legacyCourseCount": 338,
+    "legacyWordStats": {
+      "min": 7,
+      "max": 34,
+      "mean": 24.77,
+      "median": 25,
+      "stdDev": 4.06
+    },
+    "legacyVocabSize": 2347,
+    "data02CourseCount": 270,
+    "data02WordStats": {
+      "min": 220,
+      "max": 371,
+      "mean": 308.37,
+      "median": 312,
+      "stdDev": 32.93
+    },
+    "data02VocabSize": 5449
+  }
+}

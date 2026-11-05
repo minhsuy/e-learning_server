@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express'
+import express from 'express'
 import {
   changePasswordController,
   verifyOtpController,
@@ -8,6 +8,7 @@ import {
   getMeController,
   getUserDetailController,
   loginController,
+  googleLoginController,
   logoutController,
   registerController,
   resetPasswordController,
@@ -20,6 +21,7 @@ import {
   forgotPasswordValidator,
   listTeachersValidator,
   loginValidator,
+  googleLoginValidator,
   refreshTokenValidator,
   registerValidator,
   resetPasswordValidator,
@@ -27,6 +29,15 @@ import {
 } from '~/middlewares/user.middleware'
 import { handleValidationErrors } from '~/middlewares/validate'
 import { verifyAccessToken, verifyRefreshToken } from '~/middlewares/verifyToken'
+import { isAdmin } from '~/middlewares/verifyRole'
+import { updateUserByAdminController } from '~/controller/admin.controller'
+import {
+  getUserXpSummaryController,
+  getUserStreakController,
+  getUserXpHistoryController
+} from '~/controller/gamification.controller'
+import { getUserLeaderboardPositionController } from '~/controller/leaderboard.controller'
+import { xpHistoryQueryValidator } from '~/middlewares/gamification.middleware'
 
 const usersRouter = express.Router()
 
@@ -39,9 +50,33 @@ usersRouter.post('/verify-otp', verifyOtpValidator, handleValidationErrors, veri
 // Login POST /api/users/login
 usersRouter.post('/login', loginValidator, handleValidationErrors, loginController)
 
+// Google Login POST /api/users/google-login
+usersRouter.post('/google-login', googleLoginValidator, handleValidationErrors, googleLoginController)
+
+// Google Login Alias POST /api/users/google
+usersRouter.post('/google', googleLoginValidator, handleValidationErrors, googleLoginController)
+
 // Get user GET /api/users/me
 
 usersRouter.get('/me', verifyAccessToken, getMeController)
+
+// Gamification: XP Summary GET /api/users/me/xp-summary
+usersRouter.get('/me/xp-summary', verifyAccessToken, getUserXpSummaryController)
+
+// Gamification: Streak GET /api/users/me/streak
+usersRouter.get('/me/streak', verifyAccessToken, getUserStreakController)
+
+// Gamification: XP History GET /api/users/me/xp-history
+usersRouter.get(
+  '/me/xp-history',
+  verifyAccessToken,
+  xpHistoryQueryValidator,
+  handleValidationErrors,
+  getUserXpHistoryController
+)
+
+// Gamification: Leaderboard Position GET /api/users/me/leaderboard-position
+usersRouter.get('/me/leaderboard-position', verifyAccessToken, getUserLeaderboardPositionController)
 
 // Logout POST /api/users/logout
 usersRouter.post('/logout', verifyAccessToken, logoutController)
@@ -76,4 +111,26 @@ usersRouter.get('/profile/:id', getUserDetailValidator, handleValidationErrors, 
 usersRouter.get('/teachers', listTeachersValidator, handleValidationErrors, getListTeachersController)
 // get access_token
 usersRouter.post('/access_token', verifyRefreshToken, getAccessTokenController)
+
+// Admin user lock & role update with self-protection (BE-F9.11-008)
+// PATCH /api/users/admin/lock/:id
+usersRouter.patch(
+  '/admin/lock/:id',
+  verifyAccessToken,
+  isAdmin,
+  getUserDetailValidator,
+  handleValidationErrors,
+  updateUserByAdminController
+)
+
+// PATCH /api/users/admin/role/:id
+usersRouter.patch(
+  '/admin/role/:id',
+  verifyAccessToken,
+  isAdmin,
+  getUserDetailValidator,
+  handleValidationErrors,
+  updateUserByAdminController
+)
+
 export default usersRouter

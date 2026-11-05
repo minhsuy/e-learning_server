@@ -4,6 +4,7 @@ import {
   addCourse,
   addCourseFaqs,
   COURSE_PUBLIC_SELECT,
+  findCatalogCoursesWithPagination,
   findCourseDetailBySlug,
   findCoursesWithPagination,
   isCourseSlugTaken
@@ -92,7 +93,20 @@ export function formatSafeCourse(course: any) {
     sold: course.sold ?? 0,
     createdAt: course.createdAt,
     updatedAt: course.updatedAt,
-    _destroy: course.isDestroyed !== undefined ? course.isDestroyed : (course._destroy ?? false)
+    _destroy: course.isDestroyed !== undefined ? course.isDestroyed : (course._destroy ?? false),
+    averageRating:
+      course.averageRating !== undefined && course.averageRating !== null
+        ? Number(Number(course.averageRating).toFixed(1))
+        : 0,
+    ratingCount:
+      course.ratingCount !== undefined && course.ratingCount !== null
+        ? Number(course.ratingCount)
+        : 0,
+    totalDuration:
+      course.totalDuration !== undefined && course.totalDuration !== null
+        ? Number(course.totalDuration)
+        : 0,
+    rejectionReason: course.rejectionReason || null
   }
 
   if (course.category) {
@@ -132,6 +146,13 @@ export function formatSafeCourse(course: any) {
       _destroy: ch.isDestroyed ?? false,
       lessons: ch.lessons ? withCompatId(ch.lessons) : []
     }))
+    if (course.totalDuration === undefined) {
+      safe.totalDuration = course.chapters.reduce((sum: number, ch: any) => {
+        if (ch.isDestroyed || ch._destroy) return sum
+        const chSum = (ch.lessons || []).reduce((lSum: number, l: any) => lSum + (Number(l.duration) || 0), 0)
+        return sum + chSum
+      }, 0)
+    }
   }
 
   return safe
@@ -302,22 +323,47 @@ export const getCourseDetailPublicService = async (
 
 // LIST COURSES (PUBLIC)
 export const getListCoursesService = async (params: ListQuery, tx?: PrismaTransactionClient) => {
-  const { page = 1, limit = 10, search, category, level, type, priceMin, priceMax, sortBy = 'createdAt' } = params
+  const {
+    page = 1,
+    limit = 10,
+    search,
+    category,
+    level,
+    type,
+    priceMin,
+    priceMax,
+    minRating,
+    durationRange,
+    durationMin,
+    durationMax,
+    sortBy = 'createdAt',
+    sortOrder
+  } = params
 
-  const result = await findCoursesWithPagination(
+  const parseNumber = (val: unknown): number | undefined => {
+    if (val === undefined || val === null || val === '') return undefined
+    const n = Number(val)
+    return isNaN(n) ? undefined : n
+  }
+
+  const result = await findCatalogCoursesWithPagination(
     {
-      page: Number(page),
-      limit: Number(limit),
+      page: parseNumber(page) || 1,
+      limit: parseNumber(limit) || 10,
       search: search ? String(search) : undefined,
       categoryId: category ? String(category) : undefined,
       level: level ? toPrismaCourseLevel(level as string) : undefined,
       type: type ? toPrismaCourseType(type as string) : undefined,
       status: CourseStatus.APPROVED,
       isDestroyed: false,
-      priceMin: priceMin !== undefined ? Number(priceMin) : undefined,
-      priceMax: priceMax !== undefined ? Number(priceMax) : undefined,
+      priceMin: parseNumber(priceMin),
+      priceMax: parseNumber(priceMax),
+      minRating: parseNumber(minRating),
+      durationRange: durationRange ? String(durationRange) : undefined,
+      durationMin: parseNumber(durationMin),
+      durationMax: parseNumber(durationMax),
       sortBy: sortBy as string,
-      select: COURSE_PUBLIC_SELECT
+      sortOrder: sortOrder as 'asc' | 'desc'
     },
     tx
   )

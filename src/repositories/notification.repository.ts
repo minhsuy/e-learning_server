@@ -29,6 +29,7 @@ export const NOTIFICATION_PUBLIC_SELECT = {
   type: true,
   message: true,
   relatedId: true,
+  metadata: true,
   isRead: true,
   createdAt: true,
   updatedAt: true,
@@ -55,6 +56,7 @@ export const createNotification = async (
     type: ENotificationType
     message: string
     relatedId?: string | null
+    metadata?: Prisma.InputJsonValue | null
   },
   tx?: PrismaTransactionClient
 ): Promise<NotificationPublicPayload> => {
@@ -65,7 +67,8 @@ export const createNotification = async (
       receiverId: data.receiverId,
       type: data.type,
       message: data.message,
-      relatedId: data.relatedId ?? null
+      relatedId: data.relatedId ?? null,
+      metadata: data.metadata ?? undefined
     },
     select: NOTIFICATION_PUBLIC_SELECT
   })

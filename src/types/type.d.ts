@@ -63,10 +63,15 @@ export type ListQuery = {
   type?: string
   priceMin?: number | string
   priceMax?: number | string
-  sortBy?: 'createdAt' | 'sold' | 'view' | 'price' | string
+  sortBy?: 'createdAt' | 'sold' | 'view' | 'price' | 'rating' | string
+  sortOrder?: 'asc' | 'desc'
   status?: string
   author?: string
   _destroy?: boolean
+  minRating?: number | string
+  durationRange?: 'lt-5' | '5-15' | 'gt-15' | string
+  durationMin?: number | string
+  durationMax?: number | string
 }
 export interface UpdateQuizParams {
   quizId: string

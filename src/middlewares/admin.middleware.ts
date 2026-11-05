@@ -141,3 +141,19 @@ export const createTeacherValidator = [
     .isURL()
     .withMessage('Github link must be a valid URL')
 ]
+
+export const getAdminFinancialStatsValidator = [
+  query('timeRange')
+    .optional({ checkFalsy: true })
+    .isIn(['7days', '30days', '1year', 'all'])
+    .withMessage('Invalid timeRange value'),
+  query('startDate')
+    .optional({ checkFalsy: true })
+    .isISO8601()
+    .withMessage('Invalid startDate format (expected YYYY-MM-DD or ISO)'),
+  query('endDate')
+    .optional({ checkFalsy: true })
+    .isISO8601()
+    .withMessage('Invalid endDate format (expected YYYY-MM-DD or ISO)')
+]
+

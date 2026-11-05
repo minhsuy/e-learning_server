@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express'
-import { verifyAccessToken } from '~/middlewares/verifyToken'
+import { verifyAccessToken, verifyOptionalAccessToken } from '~/middlewares/verifyToken'
 import { isTeacherOrAdmin } from '~/middlewares/verifyRole'
 import {
   createQuizValidator,
@@ -44,6 +44,6 @@ quizRouter.delete(
   deleteQuizController
 )
 // GET /api/quiz/lesson/:lessonId -> Get quizzes for a specific lesson
-quizRouter.get('/lesson/:lessonId', lessonIdValidator, handleValidationErrors, getQuizzesByLessonController)
+quizRouter.get('/lesson/:lessonId', verifyOptionalAccessToken, lessonIdValidator, handleValidationErrors, getQuizzesByLessonController)
 
 export default quizRouter

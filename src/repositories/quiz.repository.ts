@@ -194,6 +194,20 @@ export const findQuizByLessonIdWithPublicQuestions = async (
 }
 
 /**
+ * Find a quiz by lesson UUID with complete question details including answers (Teacher/Admin).
+ */
+export const findQuizByLessonIdWithDetail = async (
+  lessonId: string,
+  tx?: PrismaTransactionClient
+): Promise<QuizDetailPayload | null> => {
+  const client = tx || prisma
+  return client.quiz.findUnique({
+    where: { lessonId },
+    select: QUIZ_DETAIL_SELECT
+  })
+}
+
+/**
  * Find all quizzes belonging to a specific course UUID.
  */
 export const findQuizzesByCourseId = async (

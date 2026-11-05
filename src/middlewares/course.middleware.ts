@@ -55,7 +55,28 @@ export const listPublicCoursesValidator = [
   query('priceMin').optional().isFloat({ min: 0 }).toFloat(),
   query('priceMax').optional().isFloat({ min: 0 }).toFloat(),
 
+  query('minRating')
+    .optional()
+    .isFloat({ min: 0, max: 5 })
+    .withMessage('minRating must be a number between 0 and 5')
+    .toFloat(),
+  query('durationRange')
+    .optional()
+    .isIn(['lt-5', '5-15', 'gt-15'])
+    .withMessage('durationRange must be lt-5, 5-15, or gt-15'),
+  query('durationMin')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('durationMin must be >= 0')
+    .toFloat(),
+  query('durationMax')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('durationMax must be >= 0')
+    .toFloat(),
+
   query('sortBy').optional().isString(),
+  query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('sortOrder must be asc or desc'),
 
   // riêng cho admin
   query('status').optional().isIn(Object.values(CourseStatus)),
@@ -193,5 +214,16 @@ export const updateCourseStatusValidator = [
     .notEmpty()
     .withMessage('Course status is required')
     .isIn(Object.values(CourseStatus))
-    .withMessage('Invalid course status')
+    .withMessage('Invalid course status'),
+
+  body('rejectionReason')
+    .optional({ checkFalsy: true, nullable: true })
+    .isString()
+    .withMessage('Rejection reason must be a string'),
+
+  body('reason')
+    .optional({ checkFalsy: true, nullable: true })
+    .isString()
+    .withMessage('Reason must be a string')
 ]
+

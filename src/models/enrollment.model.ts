@@ -99,3 +99,50 @@ export type CreateEnrollmentInput = z.infer<typeof createEnrollmentInputSchema>
 export type UpdateEnrollmentProgressInput = z.infer<typeof updateEnrollmentProgressInputSchema>
 export type EnrollmentPublicResponse = z.infer<typeof enrollmentPublicSchema>
 export type EnrollmentStudentResponse = z.infer<typeof enrollmentStudentSchema>
+
+// ==========================================
+// 6. STUDENT LEARNING PROGRESS SCHEMAS (TEACHER VIEW)
+// ==========================================
+
+export const studentCompletedLessonSchema = z.object({
+  id: z.string().uuid().optional(),
+  _id: z.string().optional(),
+  lessonId: z.string().uuid(),
+  title: z.string(),
+  completed: z.boolean(),
+  completedAt: z.union([z.date(), z.string()])
+})
+
+export const studentQuizSubmissionSchema = z.object({
+  id: z.string().uuid().optional(),
+  _id: z.string().optional(),
+  quizId: z.string().uuid(),
+  quizTitle: z.string(),
+  score: z.number(),
+  maxScore: z.number(),
+  passed: z.boolean(),
+  submittedAt: z.union([z.date(), z.string()])
+})
+
+export const studentLearningProgressEnrollmentSchema = z.object({
+  id: z.string().uuid(),
+  _id: z.string().optional(),
+  userId: z.string().uuid(),
+  courseId: z.string().uuid(),
+  progress: z.number().int().min(0).max(100),
+  status: z.string(),
+  enrolledAt: z.union([z.date(), z.string()]),
+  completedAt: z.union([z.date(), z.string()]).nullable().optional()
+})
+
+export const studentLearningProgressDataSchema = z.object({
+  enrollment: studentLearningProgressEnrollmentSchema,
+  completedLessons: z.array(studentCompletedLessonSchema),
+  quizSubmissions: z.array(studentQuizSubmissionSchema)
+})
+
+export type StudentCompletedLesson = z.infer<typeof studentCompletedLessonSchema>
+export type StudentQuizSubmission = z.infer<typeof studentQuizSubmissionSchema>
+export type StudentLearningProgressEnrollment = z.infer<typeof studentLearningProgressEnrollmentSchema>
+export type StudentLearningProgressData = z.infer<typeof studentLearningProgressDataSchema>
+

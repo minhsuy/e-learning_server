@@ -19,9 +19,16 @@ import quizSubmissionRouter from './quizSubmission.route'
 import ratingRouter from './rating.route'
 import teacherRouter from './teacher.route'
 import usersRouter from './user.route'
+import leaderboardRouter from './leaderboard.route'
+import videoRouter from './video.route'
+import codingExerciseRouter from './codingExercise.route'
+import recommendationRouter from './recommendation.route'
 
 export const indexRoutes = (app: any) => {
   app.use('/api/users', usersRouter)
+  app.use('/api/leaderboard', leaderboardRouter)
+  app.use('/api/videos', videoRouter)
+  app.use('/api/recommendations', recommendationRouter)
   app.use('/api/admin', adminRouter)
   app.use('/api/teacher', teacherRouter)
   app.use('/api/courses', courseRouter)
@@ -39,6 +46,7 @@ export const indexRoutes = (app: any) => {
   app.use('/api/quiz', quizRouter)
   app.use('/api/questions', questionRouter)
   app.use('/api/submissions', quizSubmissionRouter)
+  app.use('/api/coding-exercises', codingExerciseRouter)
   app.use('/api/certificates', certificateRouter)
   app.use('/api/conversations', conversationRouter)
   app.use('/api/messages', messageRouter)

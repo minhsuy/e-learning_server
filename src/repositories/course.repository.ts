@@ -1,5 +1,6 @@
 import { Course, CourseFaq, CourseLevel, CourseStatus, CourseType, Prisma } from '@prisma/client'
 import { prisma, PrismaTransactionClient } from '~/config/prisma'
+import { isValidUUID } from '~/utils/uuid'
 
 // ==========================================
 // 1. PRISMA SELECT CONSTANTS (PROJECTIONS)
@@ -20,6 +21,7 @@ export const COURSE_PUBLIC_SELECT = {
   type: true,
   sold: true,
   view: true,
+  rejectionReason: true,
   createdAt: true,
   author: {
     select: {
@@ -83,6 +85,7 @@ export const COURSE_DETAIL_SELECT = {
   documents: true,
   categoryId: true,
   authorId: true,
+  rejectionReason: true,
   createdAt: true,
   updatedAt: true,
   author: {
@@ -207,6 +210,11 @@ export const COURSE_TEACHER_SELECT = {
       name: true,
       slug: true
     }
+  },
+  _count: {
+    select: {
+      enrollments: true
+    }
   }
 } as const satisfies Prisma.CourseSelect
 
@@ -269,12 +277,23 @@ export const updateCourse = async (
 export const updateCourseStatus = async (
   id: string,
   status: CourseStatus,
+  options?: { rejectionReason?: string | null } | PrismaTransactionClient,
   tx?: PrismaTransactionClient
 ): Promise<Course> => {
-  const client = tx || prisma
+  const actualTx = options && 'course' in options ? (options as PrismaTransactionClient) : tx
+  const client = actualTx || prisma
+  const opts = options && !('course' in options) ? (options as { rejectionReason?: string | null }) : undefined
+
   return client.course.update({
     where: { id },
-    data: { status }
+    data: {
+      status,
+      ...(opts?.rejectionReason !== undefined
+        ? { rejectionReason: opts.rejectionReason }
+        : status === CourseStatus.APPROVED
+          ? { rejectionReason: null }
+          : {})
+    }
   })
 }
 
@@ -544,6 +563,267 @@ export const findCoursesWithPagination = async <T = CoursePublicPayload>(
     client.course.count({ where })
   ])
 
+  return {
+    courses,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit)
+  }
+}
+
+export interface FindCatalogCoursesParams {
+  page?: number
+  limit?: number
+  search?: string
+  categoryId?: string
+  level?: CourseLevel | string
+  type?: CourseType | string
+  priceMin?: number
+  priceMax?: number
+  minRating?: number
+  durationRange?: 'lt-5' | '5-15' | 'gt-15' | string
+  durationMin?: number
+  durationMax?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  status?: CourseStatus | string
+  authorId?: string
+  isDestroyed?: boolean
+}
+
+export interface CatalogCourseRow {
+  id: string
+  title: string
+  slug: string
+  image: string
+  introUrl: string
+  description: string
+  price: number
+  oldPrice: number
+  level: string
+  type: string
+  status: string
+  sold: number
+  view: number
+  createdAt: Date
+  updatedAt: Date
+  isDestroyed: boolean
+  author: {
+    id: string
+    username: string
+    email: string
+    avatar: string
+    role: string
+  } | null
+  category: {
+    id: string
+    name: string
+    slug: string
+  } | null
+  averageRating: number
+  ratingCount: number
+  totalDuration: number
+}
+
+/**
+ * Filtered query for public catalog courses with aggregated rating and duration stats.
+ */
+export const findCatalogCoursesWithPagination = async (
+  params: FindCatalogCoursesParams,
+  tx?: PrismaTransactionClient
+): Promise<{
+  courses: CatalogCourseRow[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}> => {
+  const client = tx || prisma
+  const page = Math.max(1, params.page || 1)
+  const limit = Math.max(1, Math.min(100, params.limit || 10))
+  const offset = (page - 1) * limit
+
+  const conditions: Prisma.Sql[] = [
+    params.isDestroyed !== undefined
+      ? Prisma.sql`c.is_destroyed = ${params.isDestroyed}`
+      : Prisma.sql`c.is_destroyed = false`
+  ]
+
+  if (params.status) {
+    conditions.push(Prisma.sql`c.status = ${String(params.status).toLowerCase()}::"CourseStatus"`)
+  } else {
+    conditions.push(Prisma.sql`c.status = 'approved'::"CourseStatus"`)
+  }
+
+  if (params.search && params.search.trim()) {
+    conditions.push(Prisma.sql`c.title ILIKE ${'%' + params.search.trim() + '%'}`)
+  }
+
+  if (params.categoryId && isValidUUID(params.categoryId)) {
+    conditions.push(Prisma.sql`c.category_id = ${params.categoryId}::uuid`)
+  }
+
+  if (params.authorId && isValidUUID(params.authorId)) {
+    conditions.push(Prisma.sql`c.author_id = ${params.authorId}::uuid`)
+  }
+
+  if (params.level) {
+    conditions.push(Prisma.sql`c.level = ${String(params.level).toLowerCase()}::"CourseLevel"`)
+  }
+
+  if (params.type) {
+    conditions.push(Prisma.sql`c.type = ${String(params.type).toLowerCase()}::"CourseType"`)
+  }
+
+  if (params.priceMin !== undefined && !isNaN(params.priceMin)) {
+    conditions.push(Prisma.sql`c.price >= ${params.priceMin}`)
+  }
+
+  if (params.priceMax !== undefined && !isNaN(params.priceMax)) {
+    conditions.push(Prisma.sql`c.price <= ${params.priceMax}`)
+  }
+
+  if (params.minRating !== undefined && !isNaN(params.minRating)) {
+    conditions.push(Prisma.sql`COALESCE(r_agg.rating_count, 0) > 0 AND r_agg.avg_rating >= ${params.minRating}`)
+  }
+
+  if (params.durationRange) {
+    if (params.durationRange === 'lt-5') {
+      conditions.push(Prisma.sql`COALESCE(l_agg.total_duration, 0) < 18000`)
+    } else if (params.durationRange === '5-15') {
+      conditions.push(Prisma.sql`COALESCE(l_agg.total_duration, 0) >= 18000 AND COALESCE(l_agg.total_duration, 0) <= 54000`)
+    } else if (params.durationRange === 'gt-15') {
+      conditions.push(Prisma.sql`COALESCE(l_agg.total_duration, 0) > 54000`)
+    }
+  }
+
+  if (params.durationMin !== undefined && !isNaN(params.durationMin)) {
+    conditions.push(Prisma.sql`COALESCE(l_agg.total_duration, 0) >= ${params.durationMin}`)
+  }
+
+  if (params.durationMax !== undefined && !isNaN(params.durationMax)) {
+    conditions.push(Prisma.sql`COALESCE(l_agg.total_duration, 0) <= ${params.durationMax}`)
+  }
+
+  const whereSql = Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
+
+  let orderBySql: Prisma.Sql
+  const isAsc = params.sortOrder === 'asc'
+  switch (params.sortBy) {
+    case 'rating':
+      orderBySql = isAsc
+        ? Prisma.sql`"averageRating" ASC, "ratingCount" ASC, c.created_at ASC`
+        : Prisma.sql`"averageRating" DESC, "ratingCount" DESC, c.created_at DESC`
+      break
+    case 'price':
+      orderBySql = isAsc ? Prisma.sql`c.price ASC, c.created_at DESC` : Prisma.sql`c.price DESC, c.created_at DESC`
+      break
+    case 'view':
+      orderBySql = isAsc ? Prisma.sql`c.view ASC, c.created_at DESC` : Prisma.sql`c.view DESC, c.created_at DESC`
+      break
+    case 'sold':
+      orderBySql = isAsc ? Prisma.sql`c.sold ASC, c.created_at DESC` : Prisma.sql`c.sold DESC, c.created_at DESC`
+      break
+    case 'title':
+      orderBySql = isAsc ? Prisma.sql`c.title ASC` : Prisma.sql`c.title DESC`
+      break
+    case 'updatedAt':
+      orderBySql = isAsc ? Prisma.sql`c.updated_at ASC` : Prisma.sql`c.updated_at DESC`
+      break
+    case 'createdAt':
+    default:
+      orderBySql = isAsc ? Prisma.sql`c.created_at ASC` : Prisma.sql`c.created_at DESC`
+      break
+  }
+
+  const [courses, countRes] = await Promise.all([
+    client.$queryRaw<CatalogCourseRow[]>`
+      SELECT 
+        c.id,
+        c.title,
+        c.slug,
+        c.image,
+        c.intro_url AS "introUrl",
+        c.description,
+        c.price::float AS "price",
+        c.old_price::float AS "oldPrice",
+        UPPER(c.level::text) AS "level",
+        UPPER(c.type::text) AS "type",
+        UPPER(c.status::text) AS "status",
+        c.sold::int AS "sold",
+        c.view::int AS "view",
+        c.created_at AS "createdAt",
+        c.updated_at AS "updatedAt",
+        c.is_destroyed AS "isDestroyed",
+        CASE 
+          WHEN u.id IS NOT NULL THEN json_build_object(
+            'id', u.id,
+            'username', u.username,
+            'email', u.email,
+            'avatar', u.avatar,
+            'role', UPPER(u.role::text)
+          )
+          ELSE NULL 
+        END AS "author",
+        CASE 
+          WHEN cat.id IS NOT NULL THEN json_build_object('id', cat.id, 'name', cat.name, 'slug', cat.slug)
+          ELSE NULL 
+        END AS "category",
+        COALESCE(r_agg.avg_rating, 0)::float AS "averageRating",
+        COALESCE(r_agg.rating_count, 0)::int AS "ratingCount",
+        COALESCE(l_agg.total_duration, 0)::int AS "totalDuration"
+      FROM courses c
+      LEFT JOIN users u ON c.author_id = u.id
+      LEFT JOIN categories cat ON c.category_id = cat.id
+      LEFT JOIN (
+        SELECT 
+          course_id,
+          ROUND(AVG(rate)::numeric, 1)::float AS avg_rating,
+          COUNT(id)::int AS rating_count
+        FROM ratings
+        WHERE status = 'active'::"ERatingStatus"
+        GROUP BY course_id
+      ) r_agg ON c.id = r_agg.course_id
+      LEFT JOIN (
+        SELECT 
+          l.course_id,
+          COALESCE(SUM(l.duration), 0)::int AS total_duration
+        FROM lessons l
+        INNER JOIN chapters ch ON l.chapter_id = ch.id
+        WHERE ch.is_destroyed = false
+        GROUP BY l.course_id
+      ) l_agg ON c.id = l_agg.course_id
+      ${whereSql}
+      ORDER BY ${orderBySql}
+      LIMIT ${limit} OFFSET ${offset};
+    `,
+    client.$queryRaw<Array<{ count: number }>>`
+      SELECT COUNT(c.id)::int AS count
+      FROM courses c
+      LEFT JOIN (
+        SELECT 
+          course_id,
+          ROUND(AVG(rate)::numeric, 1)::float AS avg_rating,
+          COUNT(id)::int AS rating_count
+        FROM ratings
+        WHERE status = 'active'::"ERatingStatus"
+        GROUP BY course_id
+      ) r_agg ON c.id = r_agg.course_id
+      LEFT JOIN (
+        SELECT 
+          l.course_id,
+          COALESCE(SUM(l.duration), 0)::int AS total_duration
+        FROM lessons l
+        INNER JOIN chapters ch ON l.chapter_id = ch.id
+        WHERE ch.is_destroyed = false
+        GROUP BY l.course_id
+      ) l_agg ON c.id = l_agg.course_id
+      ${whereSql}
+    `
+  ])
+
+  const total = countRes[0]?.count || 0
   return {
     courses,
     total,

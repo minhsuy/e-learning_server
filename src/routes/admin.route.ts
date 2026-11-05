@@ -18,10 +18,16 @@ import {
 import { getUserDetailController } from '~/controller/user.controller'
 import {
   createTeacherValidator,
+  getAdminFinancialStatsValidator,
   getAllUsersValidator,
   getUserDetailValidator,
   updateUserByAdminValidator
 } from '~/middlewares/admin.middleware'
+import {
+  getAdminCouponStatsController,
+  getAdminDashboardSummaryController,
+  getAdminFinancialStatsController
+} from '~/controller/adminStatistic.controller'
 import {
   categoryIdValidator,
   createCategoryValidator,
@@ -61,8 +67,17 @@ adminRouter.get(
   getUserDetailController
 )
 
-// PATCH /api/admin/users/:id
+// PUT/PATCH /api/admin/users/:id
 adminRouter.put(
+  '/users/:id',
+  verifyAccessToken,
+  isAdmin,
+  updateUserByAdminValidator,
+  handleValidationErrors,
+  updateUserByAdminController
+)
+
+adminRouter.patch(
   '/users/:id',
   verifyAccessToken,
   isAdmin,
@@ -175,6 +190,34 @@ adminRouter.put(
   updateCategoryValidator,
   handleValidationErrors,
   updateCategoryController
+)
+
+// --------- STATISTICS & DASHBOARD (BE-F9.11-001, BE-F9.11-005, BE-F9.11-007) ---------
+
+// GET /api/admin/statistics/financial
+adminRouter.get(
+  '/statistics/financial',
+  verifyAccessToken,
+  isAdmin,
+  getAdminFinancialStatsValidator,
+  handleValidationErrors,
+  getAdminFinancialStatsController
+)
+
+// GET /api/admin/dashboard/summary
+adminRouter.get(
+  '/dashboard/summary',
+  verifyAccessToken,
+  isAdmin,
+  getAdminDashboardSummaryController
+)
+
+// GET /api/admin/coupons/statistics
+adminRouter.get(
+  '/coupons/statistics',
+  verifyAccessToken,
+  isAdmin,
+  getAdminCouponStatsController
 )
 
 export default adminRouter

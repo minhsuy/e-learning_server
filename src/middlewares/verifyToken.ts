@@ -78,3 +78,35 @@ export const verifyRefreshToken = asyncHandler(
     }
   }
 )
+
+/**
+ * Optional token verification: extracts user context if Bearer token is present,
+ * but does not reject unauthenticated requests.
+ */
+export const verifyOptionalAccessToken = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    const authHeader = req.headers.authorization
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return next()
+    }
+
+    const token = authHeader.split(' ')[1]
+    if (!token) {
+      return next()
+    }
+
+    try {
+      const decoded = await verifyToken({
+        token,
+        privateKey: process.env.JWT_SECRECT_ACCESS_TOKEN as string
+      })
+      req.user = decoded
+    } catch {
+      // Non-fatal for optional authentication
+      req.user = undefined
+    }
+
+    return next()
+  }
+)
+

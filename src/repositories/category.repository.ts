@@ -14,7 +14,14 @@ export const CATEGORY_PUBLIC_SELECT = {
   name: true,
   slug: true,
   description: true,
-  createdAt: true
+  createdAt: true,
+  _count: {
+    select: {
+      courses: {
+        where: { isDestroyed: false }
+      }
+    }
+  }
 } as const satisfies Prisma.CategorySelect
 
 export type CategoryPublicPayload = Prisma.CategoryGetPayload<{
@@ -34,6 +41,13 @@ export const CATEGORY_ADMIN_SELECT = {
   isDestroyed: true,
   createdAt: true,
   updatedAt: true,
+  _count: {
+    select: {
+      courses: {
+        where: { isDestroyed: false }
+      }
+    }
+  },
   createdBy: {
     select: {
       id: true,

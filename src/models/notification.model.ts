@@ -33,6 +33,7 @@ export const notificationBaseSchema = z.object({
   type: z.nativeEnum(ENotificationType),
   message: z.string().min(1),
   relatedId: z.string().max(255).nullable().optional(),
+  metadata: z.record(z.unknown()).nullable().optional(),
   isRead: z.boolean().default(false),
   createdAt: z.date(),
   updatedAt: z.date()
@@ -47,7 +48,8 @@ export const createNotificationInputSchema = z.object({
   receiverId: z.string().uuid(),
   type: z.nativeEnum(ENotificationType),
   message: z.string().min(1),
-  relatedId: z.string().max(255).nullable().optional()
+  relatedId: z.string().max(255).nullable().optional(),
+  metadata: z.record(z.unknown()).nullable().optional()
 })
 
 export const getNotificationsQuerySchema = z.object({
@@ -69,6 +71,7 @@ export const notificationResponseSchema = z.object({
   type: z.nativeEnum(ENotificationType),
   message: z.string(),
   relatedId: z.string().nullable().optional(),
+  metadata: z.record(z.unknown()).nullable().optional(),
   read: z.boolean(),
   isRead: z.boolean(),
   createdAt: z.date(),

@@ -1,4 +1,4 @@
-import { ENotificationType } from '@prisma/client'
+import { ENotificationType, Prisma } from '@prisma/client'
 import { PrismaTransactionClient } from '~/config/prisma'
 import {
   countNotificationsByUser,
@@ -40,6 +40,7 @@ export const formatNotificationResponse = (notification: NotificationPublicPaylo
     type: notification.type,
     message: notification.message,
     relatedId: notification.relatedId,
+    metadata: (notification.metadata as Record<string, unknown> | null) ?? null,
     read: notification.isRead, // MongoDB compatibility alias
     isRead: notification.isRead,
     createdAt: notification.createdAt,
@@ -165,6 +166,7 @@ export const pushNotificationService = async ({
   type,
   message,
   relatedId,
+  metadata,
   tx
 }: {
   senderId?: string | null
@@ -172,6 +174,7 @@ export const pushNotificationService = async ({
   type: string | ENotificationType
   message: string
   relatedId?: string | null
+  metadata?: Prisma.InputJsonValue | null
   tx?: PrismaTransactionClient
 }): Promise<ServiceResponse> => {
   if (!receiverId || !isValidUUID(receiverId)) {
@@ -193,7 +196,8 @@ export const pushNotificationService = async ({
       receiverId,
       type: notificationType,
       message,
-      relatedId: relatedId ? String(relatedId) : null
+      relatedId: relatedId ? String(relatedId) : null,
+      metadata: metadata ?? undefined
     },
     tx
   )

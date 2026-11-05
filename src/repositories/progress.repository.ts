@@ -30,6 +30,25 @@ export type ProgressPublicPayload = Prisma.ProgressGetPayload<{
   select: typeof PROGRESS_PUBLIC_SELECT
 }>
 
+export const COMPLETED_LESSON_DETAIL_SELECT = {
+  id: true,
+  lessonId: true,
+  completed: true,
+  createdAt: true,
+  updatedAt: true,
+  lesson: {
+    select: {
+      id: true,
+      title: true,
+      order: true
+    }
+  }
+} as const satisfies Prisma.ProgressSelect
+
+export type CompletedLessonDetailPayload = Prisma.ProgressGetPayload<{
+  select: typeof COMPLETED_LESSON_DETAIL_SELECT
+}>
+
 // ==========================================
 // 2. QUERY & MUTATION FUNCTIONS
 // ==========================================
@@ -88,6 +107,29 @@ export const findCompletedLessonsByUserAndCourse = async (
     select: {
       lessonId: true
     }
+  })
+}
+
+/**
+ * Find completed lessons with details (lesson title, order, completion timestamp) for a user within a course.
+ */
+export const findCompletedLessonsDetailByUserAndCourse = async (
+  userId: string,
+  courseId: string,
+  tx?: PrismaTransactionClient
+): Promise<CompletedLessonDetailPayload[]> => {
+  const client = tx || prisma
+  return client.progress.findMany({
+    where: {
+      userId,
+      courseId,
+      completed: true
+    },
+    select: COMPLETED_LESSON_DETAIL_SELECT,
+    orderBy: [
+      { lesson: { order: 'asc' } },
+      { updatedAt: 'asc' }
+    ]
   })
 }
 

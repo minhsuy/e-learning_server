@@ -63,7 +63,10 @@
 
 ---
 
-## 4. Hierarchy Verification: User + Quiz $ightarrow$ QuizSubmission $ightarrow$ QuizSubmissionAnswer $ightarrow$ Question
+## 4. Hierarchy Verification: User + Quiz $
+ightarrow$ QuizSubmission $
+ightarrow$ QuizSubmissionAnswer $
+ightarrow$ Question
 
 ```mermaid
 graph TD

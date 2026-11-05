@@ -1,8 +1,10 @@
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import dotenv from 'dotenv'
-import { Prisma, UserRole } from '@prisma/client'
+import { Prisma, UserRole, UserStatus } from '@prisma/client'
 import { PrismaTransactionClient } from '~/config/prisma'
+import { GoogleLoginInput } from '~/models/user.model'
+import { verifyGoogleCredential } from '~/utils/googleAuth'
 import {
   addUser,
   deleteUser,
@@ -517,5 +519,119 @@ export const getAccessTokenService = async (
   return {
     success: true,
     access_token
+  }
+}
+
+// LOGIN WITH GOOGLE
+export const loginWithGoogleService = async (
+  payload: GoogleLoginInput,
+  tx?: PrismaTransactionClient
+): Promise<ServiceResponse> => {
+  const normalizedParams = {
+    idToken: payload.idToken || payload.id_token,
+    credential: payload.credential,
+    token: payload.token,
+    code: payload.code,
+    redirectUri: payload.redirectUri || payload.redirect_uri,
+    accessToken: payload.accessToken || payload.access_token
+  }
+
+  const verifyResult = await verifyGoogleCredential(normalizedParams)
+
+  if (!verifyResult.success || !verifyResult.user) {
+    return {
+      success: false,
+      statusCode: 400,
+      message: verifyResult.message || 'Xác thực tài khoản Google không thành công'
+    }
+  }
+
+  const { email, name, picture } = verifyResult.user
+
+  // Check if user already exists in PostgreSQL
+  const existingUser = await findUserByEmail(email, tx)
+
+  if (existingUser) {
+    // Check account status
+    if (existingUser.status === UserStatus.INACTIVE) {
+      return {
+        success: false,
+        statusCode: 403,
+        message: 'Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động'
+      }
+    }
+
+    // Auto-verify email if previously unverified
+    if (!existingUser.isVerified) {
+      await markUserAsVerified(existingUser.id, tx)
+      existingUser.isVerified = true
+    }
+
+    // Update avatar if currently empty and Google provided one
+    if (!existingUser.avatar && picture) {
+      await updateUser(existingUser.id, { avatar: picture }, tx)
+      existingUser.avatar = picture
+    }
+
+    const roleString = (existingUser.role || 'USER').toLowerCase()
+    const access_token = generateAccessToken({ userId: existingUser.id, role: roleString })
+    const refresh_token = generateRefreshToken({ userId: existingUser.id })
+
+    // Hash refresh token before storing in DB
+    await updateRefreshToken(existingUser.id, hashToken(refresh_token), tx)
+
+    return {
+      success: true,
+      access_token,
+      refresh_token,
+      data: formatSafeUser(existingUser),
+      message: 'Đăng nhập Google thành công !'
+    }
+  }
+
+  // Register new user via Google
+  // Generate safe alphanumeric username
+  const cleanBase = (name || email.split('@')[0])
+    .trim()
+    .replace(/[^a-zA-Z0-9_]/g, '_')
+    .slice(0, 20)
+
+  let candidateUsername = cleanBase.length >= 3 ? cleanBase : `user_${crypto.randomInt(1000, 9999)}`
+
+  let isTaken = await isUsernameTaken(candidateUsername, undefined, tx)
+  while (isTaken) {
+    candidateUsername = `${candidateUsername.slice(0, 15)}_${crypto.randomInt(1000, 9999)}`
+    isTaken = await isUsernameTaken(candidateUsername, undefined, tx)
+  }
+
+  // High-entropy random password to satisfy required password field in DB
+  const randomPassword = crypto.randomBytes(32).toString('hex')
+  const hashedPassword = await bcrypt.hash(randomPassword, 10)
+
+  const newUser = await addUser(
+    {
+      username: candidateUsername,
+      email,
+      password: hashedPassword,
+      role: UserRole.USER,
+      status: UserStatus.ACTIVE,
+      avatar: picture || '',
+      isVerified: true
+    },
+    tx
+  )
+
+  const roleString = (newUser.role || 'USER').toLowerCase()
+  const access_token = generateAccessToken({ userId: newUser.id, role: roleString })
+  const refresh_token = generateRefreshToken({ userId: newUser.id })
+
+  await updateRefreshToken(newUser.id, hashToken(refresh_token), tx)
+
+  return {
+    success: true,
+    access_token,
+    refresh_token,
+    data: formatSafeUser(newUser),
+    message: 'Đăng ký và đăng nhập Google thành công !'
   }
 }

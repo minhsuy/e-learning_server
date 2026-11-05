@@ -37,8 +37,12 @@ export const deleteQuizController = asyncHandler(async (req: Request, res: Respo
 // get quiz for lesson :
 export const getQuizzesByLessonController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const lessonId = Array.isArray(req.params.lessonId) ? req.params.lessonId[0] : req.params.lessonId
+  const user = req.user as { userId?: string; role?: string; id?: string } | undefined
+  const userId = user?.userId || user?.id
+  const role = user?.role
 
-  const result = await getQuizzesByLessonService(lessonId)
+  const result = await getQuizzesByLessonService(lessonId, { userId, role })
 
   return res.status(result.success ? 200 : result.statusCode || 400).json(result)
 })
+

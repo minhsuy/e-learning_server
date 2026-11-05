@@ -1,0 +1,59 @@
+{
+  "executedAt": "2026-10-28T15:06:55.093Z",
+  "status": "DRY_RUN_PASSED",
+  "preSnapshot": {
+    "timestamp": "2026-10-28T15:06:55.046Z",
+    "totalCategories": 14,
+    "activeCategories": 13,
+    "destroyedCategories": 1,
+    "totalCourses": 378,
+    "activeCourses": 377,
+    "destroyedCourses": 1,
+    "approvedCourses": 340,
+    "pendingCourses": 30,
+    "rejectedCourses": 8,
+    "teacherCourses": {
+      "teacher02": 95,
+      "teacher_cntt": 91,
+      "giaovientrungquoc": 91
+    }
+  },
+  "postSnapshot": {
+    "timestamp": "2026-10-28T15:06:55.092Z",
+    "totalCategories": 14,
+    "activeCategories": 13,
+    "destroyedCategories": 1,
+    "totalCourses": 378,
+    "activeCourses": 377,
+    "destroyedCourses": 1,
+    "approvedCourses": 340,
+    "pendingCourses": 30,
+    "rejectedCourses": 8,
+    "teacherCourses": {
+      "teacher02": 95,
+      "teacher_cntt": 91,
+      "giaovientrungquoc": 91
+    }
+  },
+  "plannedMutations": {
+    "categoryNormalizations": 3,
+    "testCategorySoftDeletes": 7,
+    "newCategoriesToInsert": 16,
+    "newCoursesToInsert": 270,
+    "batchesPlanned": 9,
+    "batchSize": 30
+  },
+  "teacherAllocation": {
+    "teacher02": 90,
+    "teacher_cntt": 90,
+    "giaovientrungquoc": 90
+  },
+  "expectedPostExecutionTotals": {
+    "totalCategories": 30,
+    "activeCategories": 22,
+    "destroyedCategories": 8,
+    "totalCourses": 648,
+    "activeCourses": 647,
+    "approvedCourses": 610
+  }
+}

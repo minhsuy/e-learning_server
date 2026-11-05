@@ -171,3 +171,22 @@ export const refreshTokenValidator = [
     .isString()
     .withMessage('Refresh token must be a string')
 ]
+
+// GOOGLE LOGIN VALIDATOR
+export const googleLoginValidator = [
+  body().custom((_, { req }) => {
+    const candidate =
+      req.body?.idToken ||
+      req.body?.id_token ||
+      req.body?.credential ||
+      req.body?.token ||
+      req.body?.code ||
+      req.body?.accessToken ||
+      req.body?.access_token
+
+    if (!candidate || typeof candidate !== 'string' || candidate.trim() === '') {
+      throw new Error('Google credential (idToken / credential / code / accessToken) is required')
+    }
+    return true
+  })
+]

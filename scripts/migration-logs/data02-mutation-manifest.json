@@ -1,0 +1,521 @@
+{
+  "executedAt": "2026-10-28T15:07:15.987Z",
+  "preSnapshot": {
+    "timestamp": "2026-10-28T15:07:15.959Z",
+    "totalCategories": 14,
+    "activeCategories": 13,
+    "destroyedCategories": 1,
+    "totalCourses": 378,
+    "activeCourses": 377,
+    "destroyedCourses": 1,
+    "approvedCourses": 340,
+    "pendingCourses": 30,
+    "rejectedCourses": 8,
+    "teacherCourses": {
+      "teacher02": 95,
+      "teacher_cntt": 91,
+      "giaovientrungquoc": 91
+    }
+  },
+  "normalizedCategories": [
+    {
+      "id": "2ec199fc-a7e0-531e-b79d-14b479f74853",
+      "previousName": "Khoa học dữ liệuu",
+      "previousDescription": "Danh mục các khóa học về Data Science, Machine Learning",
+      "updatedName": "Khoa học dữ liệu",
+      "updatedDescription": "Danh mục các khóa học về Data Science, Machine Learning"
+    },
+    {
+      "id": "084d6053-7823-4cb8-a7e7-7dba3e6a78bf",
+      "previousName": "ai course",
+      "previousDescription": "Danh mục các khóa học về AI",
+      "updatedName": "Trí tuệ nhân tạo (AI)",
+      "updatedDescription": "Danh mục các khóa học về Trí tuệ nhân tạo (AI), Học máy và Học sâu"
+    },
+    {
+      "id": "dddf433f-347b-5024-b70d-2398aaed3660",
+      "previousName": "Lập trình",
+      "previousDescription": "Danh mục các khóa học về lập trình web",
+      "updatedName": "Lập trình",
+      "updatedDescription": "Danh mục các khóa học ngôn ngữ lập trình, thuật toán và phát triển phần mềm"
+    }
+  ],
+  "softDeletedCategories": [
+    {
+      "id": "9d32771f-67e8-4b08-864d-7cbfea0208f3",
+      "name": "Step 5 Category 1792845835347",
+      "slug": "step-5-category-1792845835347",
+      "previousIsDestroyed": false,
+      "currentIsDestroyed": true
+    },
+    {
+      "id": "030a3e73-7ed7-4269-b8fd-479110c1fda4",
+      "name": "Step 5 Category 1792845863604",
+      "slug": "step-5-category-1792845863604",
+      "previousIsDestroyed": false,
+      "currentIsDestroyed": true
+    },
+    {
+      "id": "3f904a91-88b0-42ff-95ad-371a432d0ee7",
+      "name": "Step 5 Category 1792845903273",
+      "slug": "step-5-category-1792845903273",
+      "previousIsDestroyed": false,
+      "currentIsDestroyed": true
+    },
+    {
+      "id": "7b4599cf-843d-4010-941a-6380c012df16",
+      "name": "Step 5 Category 1792845942349",
+      "slug": "step-5-category-1792845942349",
+      "previousIsDestroyed": false,
+      "currentIsDestroyed": true
+    },
+    {
+      "id": "eddb30e9-ff76-4c00-ba39-d4a1b96678a2",
+      "name": "Step 6 Category 1792897579436",
+      "slug": "step-6-cat-1792897579436",
+      "previousIsDestroyed": false,
+      "currentIsDestroyed": true
+    },
+    {
+      "id": "b69ff7cb-f9d8-47d8-9d11-909b5b4a30fb",
+      "name": "Step 6 Category 1792897656271",
+      "slug": "step-6-cat-1792897656271",
+      "previousIsDestroyed": false,
+      "currentIsDestroyed": true
+    },
+    {
+      "id": "b6243dac-63cc-4775-98a5-03b3b58af153",
+      "name": "Step 6 Category 1792897801842",
+      "slug": "step-6-cat-1792897801842",
+      "previousIsDestroyed": false,
+      "currentIsDestroyed": true
+    }
+  ],
+  "insertedCategories": [
+    {
+      "id": "626ff628-88f2-5436-9ad4-ec547e86547a",
+      "name": "Phát triển ứng dụng di động",
+      "slug": "phat-trien-ung-dung-di-dong"
+    },
+    {
+      "id": "97739f60-fb34-5cb7-87b1-11d2585fc58d",
+      "name": "An ninh mạng & Bảo mật",
+      "slug": "an-ninh-mang-va-bao-mat"
+    },
+    {
+      "id": "de33e051-5616-5b78-b31b-17e40e6b3037",
+      "name": "Điện toán đám mây & DevOps",
+      "slug": "dien-toan-dam-may-va-devops"
+    },
+    {
+      "id": "7afb937c-ae97-5bae-bd7d-f377ab0bf799",
+      "name": "Cơ sở dữ liệu & Kỹ thuật dữ liệu",
+      "slug": "co-so-du-lieu-va-ky-thuat-du-lieu"
+    },
+    {
+      "id": "ebfd0b83-65bd-5393-8529-e81a395a4cd1",
+      "name": "Thiết kế UI/UX & Sản phẩm số",
+      "slug": "thiet-ke-ui-ux-va-san-pham-so"
+    },
+    {
+      "id": "b8fec287-f686-5239-b780-5f4b2fff2947",
+      "name": "Thiết kế đồ họa & Truyền thông thị giác",
+      "slug": "thiet-ke-do-hoa"
+    },
+    {
+      "id": "fbbde717-fb63-5dde-b45b-4041909976d9",
+      "name": "Digital Marketing & Tăng trưởng",
+      "slug": "digital-marketing"
+    },
+    {
+      "id": "289121d2-c54f-5b9e-a993-dd909a430b91",
+      "name": "Quản trị kinh doanh & Khởi nghiệp",
+      "slug": "quan-tri-kinh-doanh-va-khoi-nghiep"
+    },
+    {
+      "id": "ee865886-b009-5b54-bcee-f055c659c6fb",
+      "name": "Tài chính, Kế toán & Đầu tư",
+      "slug": "tai-chinh-ke-toan-va-dau-tu"
+    },
+    {
+      "id": "88d6470a-af9a-5883-aa07-a2bb3d78c8f9",
+      "name": "Quản lý dự án & Vận hành Agile",
+      "slug": "quan-ly-du-an-va-van-hanh"
+    },
+    {
+      "id": "9f6485ab-dc41-54c7-a8a3-796b649a37be",
+      "name": "Tin học văn phòng & Tự động hóa",
+      "slug": "tin-hoc-van-phong-va-tu-dong-hoa"
+    },
+    {
+      "id": "b7f79eec-ca57-5122-95b5-089e4629d0d9",
+      "name": "Phát triển bản thân & Kỹ năng mềm",
+      "slug": "phat-trien-ban-than-va-ky-nang-mem"
+    },
+    {
+      "id": "8b19f844-2304-567f-b090-963eb0c2a7fd",
+      "name": "Ngoại ngữ ứng dụng & Giao tiếp quốc tế",
+      "slug": "ngoai-ngu-ung-dung"
+    },
+    {
+      "id": "8c0b20dd-4b33-56bd-9067-07a230795e49",
+      "name": "Nhiếp ảnh, Dựng phim & Sáng tạo nội dung",
+      "slug": "nhiep-anh-va-dung-phim"
+    },
+    {
+      "id": "92cc10e6-324b-5a40-bf0b-942cc4c65ce6",
+      "name": "Âm nhạc & Nghệ thuật sáng tạo",
+      "slug": "am-nhac-va-nghe-thuat-sang-tao"
+    },
+    {
+      "id": "ff50bad7-4dbd-5bcd-a225-533eaf3f8cb5",
+      "name": "Sức khỏe, Thể chất & Lối sống",
+      "slug": "suc-khoe-the-chat-va-loi-song"
+    }
+  ],
+  "insertedCourseBatches": [
+    {
+      "batchIndex": 1,
+      "count": 30,
+      "courseIds": [
+        "c07bef70-d1db-5e68-afa4-d93c94ee1b64",
+        "3b67e2c1-0fbb-5c85-84d7-268ffbff1f86",
+        "ed03f8ae-8429-5819-827c-f0180e8a6b52",
+        "c0b0c100-9e1c-5298-9011-9b136bfaf37e",
+        "24ddb4fa-b1ec-5591-868f-85243b18c523",
+        "816282a4-d902-5951-bfd3-6ed5b5c6f39f",
+        "014de715-f12c-5ece-8f4d-90634ba64bed",
+        "4da746c7-09c2-54d1-9cd5-e3d1da464395",
+        "ad444718-56c6-5527-9fc9-95f9c151fb99",
+        "1e7a263b-770c-5d66-951c-d8d03e39a530",
+        "c8298a0f-f246-5f10-824d-223b25814a80",
+        "5ddb138c-9b0a-50bf-87ab-b5f38e3b1712",
+        "cf9bd164-ed6b-5c3b-9262-15764702568f",
+        "740b81e3-3d03-5726-9712-dc8c918b49aa",
+        "a81e2b36-bc67-5d81-b4fc-0c567fb2d090",
+        "2c1fa3d9-23dc-5507-b336-7dfa58881ccb",
+        "8fb201b9-98d3-58ea-a9d2-23c494c7b233",
+        "f70e1869-5b9f-5109-aaf8-92e8463ee456",
+        "8515657c-4ec7-5133-9f01-7f03a6bd6441",
+        "4234b36d-0a0e-54a5-a7d8-8b8426cc8fa5",
+        "1f569365-2a2d-507f-9ea2-ce12bd72dcf1",
+        "9a0041a7-f43d-5bfc-b7ac-ce93ddbbf0bf",
+        "adc7b1de-fe83-5b23-b960-54d64ffc5547",
+        "7bed5c5c-e473-57ef-909d-a4c7ed3b03a4",
+        "6bebc346-d0e5-5ef3-a52e-874984c3c751",
+        "232ad13d-c750-5504-92e3-2955a69a3992",
+        "e99dd1dd-e33a-562f-998b-b54813da0443",
+        "7968eff3-53ab-504e-8e9b-909b530744c1",
+        "b257b31b-ac87-5fc7-a0d8-bb92c1e28762",
+        "697bc23d-0c95-505c-a713-577e9d5cc0e8"
+      ]
+    },
+    {
+      "batchIndex": 2,
+      "count": 30,
+      "courseIds": [
+        "3fabf0fe-17eb-56b9-8a45-168261c8fec3",
+        "3fc5d270-8a9a-5c39-936d-f5d08f3c1e8e",
+        "5760af26-4579-5cb1-9713-12d88541c656",
+        "13808ab6-39bc-56a0-82f6-9fadf9e35219",
+        "8d480c3c-3124-50db-ae45-3fec0a0fd3bf",
+        "ba7223cc-c6b5-5151-a81e-332578c3be54",
+        "5ff1b70b-63f4-54c1-97c4-7b8ee14e7aff",
+        "631d6766-d92c-5220-b740-79f66e016de3",
+        "a01110d3-6468-52f6-9396-4ffd45b9e96d",
+        "60ee9bec-d890-5936-b165-c07ecc46dd78",
+        "f3a03c8c-69ba-566a-a48f-cd9788591727",
+        "25b5c314-cb16-569c-ad8f-6859ddf567ae",
+        "850bba28-aa30-5fc7-af57-eb568a991cb1",
+        "e4ec27e3-6831-5707-92ea-e084e8d90431",
+        "e47388b4-fb98-5ebd-a231-38ea5b1265c3",
+        "9b6a72ee-141e-58a0-9b99-c102647e9600",
+        "aee67dc4-bf45-5b51-a131-a529b9ed6187",
+        "e977b403-214a-5f66-b822-4fea497f1783",
+        "3a3e7128-5527-5dde-8e00-31a0dc6f8f58",
+        "c7a1ea94-9bb7-50d8-8cce-8b67da07c544",
+        "27ac3041-4887-59d6-a607-7eec20836d3e",
+        "4d3c36ed-7583-5eeb-827a-7a3e4f79034f",
+        "ab1fed3d-4646-5183-b3ad-9dd5f650d0e4",
+        "0412233c-c805-574d-8661-5cb6d0383210",
+        "adce83a6-872d-5e44-a084-492f42458b93",
+        "a38c23ec-7929-5e49-8161-7766437f71db",
+        "9337efd7-74d3-509f-872c-4f0d00eda2c2",
+        "7a622393-0cd2-5ac9-a88d-ad3e84e63a1b",
+        "412a4a53-cab5-5e11-bcec-faf05b1e679c",
+        "d8f49264-51fc-5ce3-bc66-8e90a04396c9"
+      ]
+    },
+    {
+      "batchIndex": 3,
+      "count": 30,
+      "courseIds": [
+        "9a1d0760-a604-5ba6-a111-28515e3f76eb",
+        "5c1c1498-e95c-5c26-91f3-db352b4bfded",
+        "3f4a2c17-8c8e-5901-a7f0-9d2d9304365a",
+        "3db0cd78-7586-5099-aff5-dfc295ab69b3",
+        "791470e6-2bc4-5dc8-b877-cf7ab098d603",
+        "33e0882b-dd56-59ea-9c55-5c2b3c044a6f",
+        "2e056b18-7a96-5be7-8912-6dfdc8123008",
+        "469fabfd-834e-50c8-9baa-34c367d91c08",
+        "040cdf8e-b4e8-5469-a7d1-256959d64680",
+        "d2d6cd6a-011b-5d78-9028-aac27b29fe20",
+        "d284b961-3a6d-5504-a14f-7bdea9612113",
+        "75d69af2-7f0c-5057-928d-c61d2ef51f7f",
+        "e3e37371-c0f5-5980-8433-4ff2efb9f0d0",
+        "fe33ebfc-8f9d-5d8b-9087-8173d92f777e",
+        "0fdd2d9a-f1d5-5c9d-86c8-68f5ee09ea55",
+        "686dd97c-6e05-519a-8a5d-c78c8e2d1aaf",
+        "f0b866a1-55eb-5dc8-bc3d-3d6cffded2a8",
+        "55864abb-d769-5629-90da-86d7125defdf",
+        "a235f55b-558f-56d0-8a23-af9bb704115a",
+        "3bb1ba8b-64f7-575b-8f60-ad90ec32c118",
+        "8140a181-870c-5254-8eb2-d0dcf38d9c13",
+        "1750dd82-ab4f-5a03-8349-7b6b939b645e",
+        "dda11242-5750-5461-a427-dab30a438978",
+        "06db3307-9c92-5e2e-8cb8-ae8944664379",
+        "a884679d-547d-595b-8946-a8b758cc78f8",
+        "60e162a4-455e-513f-ae7e-6d3b3e1f1ecc",
+        "d3f951ae-1218-5905-81e6-fde4633355dc",
+        "b82be25b-3cd7-5b0b-97ae-ade676cf1a7b",
+        "35c5e2f8-08ce-5bfa-b0b9-863cf3402e3c",
+        "e70ef411-c50c-5089-9339-9dde751035af"
+      ]
+    },
+    {
+      "batchIndex": 4,
+      "count": 30,
+      "courseIds": [
+        "59a58523-63af-5416-8079-5a42f176cba8",
+        "558bb792-101e-51b3-8f06-e2b40748e14f",
+        "832c3e96-03a6-56e0-b14c-d554dafaf3a1",
+        "4095c445-395b-5bba-adab-dd987f408d76",
+        "52a4b99f-042b-5bbf-874f-65b032d32eb7",
+        "b8729888-9f69-5523-a58d-2e0ab8f4ebe0",
+        "8fd4938c-bec6-5d33-9997-26c183d34e2b",
+        "441578e8-e328-5b50-990c-bd0f178b08a3",
+        "fcf1b840-8bb3-5c38-9e55-282e78aed7d7",
+        "d2d0cb66-9b7b-5a21-a15a-08740de855ef",
+        "bceedfe9-5ccc-57c6-b9b2-0be9ab9719b0",
+        "a70f8506-32f1-5cdd-b160-d859ab065805",
+        "a0264bd5-05eb-5155-a3af-1d72f1653271",
+        "6c7e4e19-9e3a-52d7-b1f5-032e9f0c8618",
+        "2392276e-23a9-5347-b6f7-c0f1b58735c6",
+        "6824d370-724d-5df1-82ea-c7f4aca4e13b",
+        "98acc37e-5445-5c21-813a-8cb469d89657",
+        "2569b1fe-510c-5822-a76d-d9fb0c2191d0",
+        "117eb160-efe3-5419-b802-5e9a1025e6c6",
+        "d073adf6-6367-511c-8214-3a0fd8c92be9",
+        "3eef2298-1d79-52c1-a153-c717a21a46a1",
+        "44f02d27-a6fc-5c78-9583-d5460132a72e",
+        "729f045f-7ba1-5e4e-900d-bee7c4a04cbd",
+        "fb7f3663-279c-5659-bcd8-2fa1e9dc2730",
+        "93a20271-3a05-5fc0-a9a3-f09f0350393a",
+        "65273ad9-1441-5b8b-b7d1-de182e55be5c",
+        "358ff311-3e06-5ed0-8181-66892ff6fb0d",
+        "fafcf83e-6263-5472-a054-3d77ec74ee42",
+        "bf26eeb6-039a-50ad-89ae-6b4d61badaae",
+        "25ab717d-d540-503a-b9ac-65599414acbe"
+      ]
+    },
+    {
+      "batchIndex": 5,
+      "count": 30,
+      "courseIds": [
+        "9cfa1dbd-ef27-5838-8e57-110d0b42867c",
+        "6479ae07-c434-58bd-86d2-8e87bee0aa52",
+        "5c8d3f20-04c7-5abf-9a70-9af068cd7226",
+        "b1ae54ff-2591-5e07-b778-27d054f6aa0f",
+        "a3b13bfe-bef6-51c7-84cb-c91986483f90",
+        "dd89a5f5-6430-500c-87e3-7e8a3d13880c",
+        "21a5eccd-8583-5a26-a699-2dab0da0defd",
+        "f1f69a0b-92c2-594e-9caf-bfb6f812d4a7",
+        "e0edb0de-37b0-5a5e-b6f0-904e3471f331",
+        "29ee0ff4-3424-517e-913b-ea6dcf6d5b61",
+        "0dbc69ba-8612-58bb-a4f7-a6d9b767544d",
+        "e240dc17-3f2f-523c-9b92-8edd9dd67588",
+        "225d033d-2f3b-5d78-9bff-0ef7650fbd0a",
+        "d340486d-a8f4-5607-83b7-4206df5b4bf5",
+        "7eb326b3-0d5a-5a8b-ac87-b18f13bea9b1",
+        "4f0d502c-8f5c-546e-800e-b52eba65c001",
+        "a58f51d3-93c2-5d1f-a5c2-7dc8574aaa82",
+        "7589e527-c7ac-592f-a04a-c72a6e4ebd11",
+        "36dd0cf2-9dcf-59be-a8c0-521c63284070",
+        "26610eb3-a4bb-5ae5-bada-8c7745342266",
+        "aa3b7e1d-9d21-523a-811d-15768fef7aa2",
+        "be7c2ae3-0933-52ec-be10-6335ca0fceaa",
+        "3824b4a8-94bb-5106-9f2c-43d5a22fac8d",
+        "b8bf5025-8ceb-58cb-bb16-624dd5e136bf",
+        "9a309f25-690b-5e81-95a4-5e88e02a0973",
+        "d1d31ee5-8b7f-5d64-9f84-3efbcd2aac4d",
+        "24e219ab-a0b6-5418-b6b6-4f8ab21119ed",
+        "b166c640-f525-582d-a458-eb4aa69d0c92",
+        "dc4235a3-bc57-5d20-9fc6-51d235ac16fc",
+        "aa92f86d-912e-5c44-a8c7-15e738c44be5"
+      ]
+    },
+    {
+      "batchIndex": 6,
+      "count": 30,
+      "courseIds": [
+        "62b5bc35-87e0-5ed3-8023-06c561c41035",
+        "040a09e7-3534-52b9-95f0-7d8a1da45888",
+        "7d41ed17-a57a-5d17-9ab3-3b4bcce29bcb",
+        "27d918ac-2ffc-50ae-bc69-ce179689c16a",
+        "277b3b94-2117-5574-8866-e75e2d565bbe",
+        "b2f665a0-d511-510a-a5a6-325c4489680b",
+        "b8e5ca76-ff37-5cdd-b9f6-bda54021bdd4",
+        "ae4bb718-61f2-5238-b98a-344dab311a9e",
+        "0f724fa2-2c42-5da2-ae71-44cb622ca45d",
+        "3568b3a4-cfd2-5cce-b26a-77f80b2c536e",
+        "2335011d-3248-5f4a-b23d-fb957f594097",
+        "114c3d85-3ba3-567d-916c-97dfdf3d811a",
+        "8486835d-5ba1-5659-9929-2a581c42bc3d",
+        "14719459-8c95-5171-be9c-cbfd059c56e2",
+        "223ca128-42e3-5e05-998e-0c8862a7db5d",
+        "8989ddc0-826c-5469-a189-f26b9601e5bb",
+        "23281cc7-2888-59c7-8200-4dc16b8178cb",
+        "82f1d142-fe18-5ed1-8a4e-d4fa6a2eb95b",
+        "cb098ee5-a360-563a-a88b-059b3e93039e",
+        "70ba8b2f-d5ca-5f2a-a961-242d296fc7c7",
+        "2c4c8c2a-9d8a-564f-a17f-24affeacb8b6",
+        "2187fa94-1035-549b-946f-b9dcf6036051",
+        "82174415-9aaa-5916-9b1a-0071769f5977",
+        "0b2c2732-88e8-5ac4-8377-e81ce81c048b",
+        "b29414f5-2569-564e-93f2-7fcfd288157e",
+        "dcdf9b05-eefb-575e-81f5-6ece64cf922f",
+        "a1ccfc1c-2a29-53f0-8e1f-e67d8ad9b96a",
+        "962ede27-1af1-5eda-af42-bc37098a9d4f",
+        "cf0b5e92-995d-5dc8-84c1-bfd6e10aebc3",
+        "bb9f351a-c87c-5752-ab9c-ccc53235f038"
+      ]
+    },
+    {
+      "batchIndex": 7,
+      "count": 30,
+      "courseIds": [
+        "0c65cc91-bdff-58af-8cf6-87155742ec99",
+        "82eb64dd-d1f5-5ce0-9987-b8a8085de54d",
+        "5a4a9f7d-66e8-5e0a-b507-2f235d70a627",
+        "97a747a1-3ef1-5180-8bd5-ca95280abde4",
+        "bc264a8e-b133-59a9-80d0-c22c8ef3ee24",
+        "4120cdf4-fddd-5595-88c3-5ca0107628ac",
+        "149982f4-a240-5258-88db-89f21b115897",
+        "a62ba3ed-0d47-5f18-94b8-0c3b9fbbc8dc",
+        "9f594235-611c-5cab-9067-9df6effb75eb",
+        "65e01b88-3775-5da3-bbd5-6f6e2241f53e",
+        "5efbfdfd-aac1-5636-953d-294f5839f763",
+        "2ef9e2e9-f090-523d-9e6d-e8c4a5cac882",
+        "e4d1a8b2-2dba-5047-b676-c8c977916a2b",
+        "6b2e808c-2a8c-5fcb-8776-ebcbcbb5b659",
+        "4b8acc8e-83e8-5e0f-8b3e-4ec1a270b590",
+        "1047f6b2-28e6-5dc8-9f9f-a51c970bb4dc",
+        "fd0c9d8f-333e-57f9-b3c2-c4244adcd6f1",
+        "e3470d13-c534-500b-9c3c-326274040739",
+        "cd704b5f-a85c-51d9-93af-d9cabe7fc7e0",
+        "d6801056-8722-52eb-bf4e-87c125cac8ba",
+        "0cfc65d2-3061-565a-81aa-354d6bc3aaa6",
+        "7e17dec7-6329-5d70-a825-8f4553108c72",
+        "d4a4b0e4-d481-5509-a1a9-58c5924d6ab9",
+        "ffaddfb7-dc8c-537d-8cb8-f5ae5c987876",
+        "685c581e-e79d-5327-8da7-e180fa7c34ac",
+        "ee708fd5-8338-5640-8953-3f44a20334e6",
+        "7b3c9862-8bb1-5c68-a9e4-da5c3ed8016a",
+        "775e2a6f-6ea0-50fb-9aff-b72b6dc5c65e",
+        "ae30447a-0780-5c50-80cb-35709465f394",
+        "03e7a807-0686-5aeb-9911-af2d3e771f09"
+      ]
+    },
+    {
+      "batchIndex": 8,
+      "count": 30,
+      "courseIds": [
+        "a1fb0d8a-d154-5011-8e36-22dcf18769e1",
+        "8165b54c-d157-5869-a0f3-4c668dc3b862",
+        "7a80abdd-8fe6-547e-8490-033f6e0264d7",
+        "35d17b02-be43-5a62-b352-bd408fceed5d",
+        "0a871c71-fc21-553a-8620-93497994561d",
+        "16f167b6-53f0-501c-80a9-e3c4c6cfd85f",
+        "5a0061f6-da63-5056-bb74-331041f89809",
+        "6468db5a-08eb-5097-811a-9db4e541a843",
+        "2f3d419d-c5a9-53da-9aa3-b7f4024aa08d",
+        "ce70344d-69d6-510a-b22b-9fa5ddad328f",
+        "2cd03668-8702-53d7-82d9-b4e4cb74c3b9",
+        "3ee0e16c-f989-5bad-9b3d-87dac1098526",
+        "ddbee2e7-53da-5301-b029-6cb4db7f8676",
+        "91cfebb8-7cbe-5e7e-b9da-4ed04ad5bea5",
+        "05e2d21d-3828-5897-8c70-5650abf905af",
+        "0b1d7af9-4a52-5986-b8a2-0577251e4c3e",
+        "971eeb8d-e8a3-5599-a419-33138309c5e3",
+        "9c58ac81-6ab4-5fca-bae7-e68e284c69d2",
+        "83dbdc43-a159-5fc0-9175-70cf584af073",
+        "3273e4a2-2a3a-522c-88bf-2194adcff09a",
+        "f647bac3-e63d-5cea-94d1-d458678b2d09",
+        "b0c2c854-5638-57fe-8f5c-79b0e8159786",
+        "9cd33dd6-1efc-51f8-b0f4-5ba6ced616cb",
+        "6125f74b-005d-5f3b-8b9b-c23060b3bf0b",
+        "93605332-504b-5d9f-8fb6-a97efab6773f",
+        "d9e9fdf1-4a44-5eeb-999a-1736f0f7040e",
+        "92b9f72d-1ea2-5969-9368-8e0118c3e656",
+        "d4e5b2d5-df73-5d45-8474-395f13773a28",
+        "2d183c71-55a2-5c4a-8006-21e2c0b75db1",
+        "de5ce680-f5d2-5960-b133-b3ebab75d46d"
+      ]
+    },
+    {
+      "batchIndex": 9,
+      "count": 30,
+      "courseIds": [
+        "33bf7c0c-2838-58f0-87f8-5704e7467ea6",
+        "45e958df-fade-5c0c-bc74-a377151ee0ba",
+        "934ac09c-13ec-53fc-b05a-0f06c1bd2075",
+        "0a07a2ff-5773-51fd-ae9b-9df8b8c133fc",
+        "b8f74f23-47db-51de-9c83-8516558de5cf",
+        "791f368a-5c24-5d3a-af17-b3cc8cf06955",
+        "f2ed6c75-4d7b-54f4-89f7-0684180fa9af",
+        "cf196dd2-9ede-55ec-bdad-4219e309112b",
+        "2c167525-fca7-54fa-ac36-9125e70111fd",
+        "896a6814-f8cc-5e1b-9e03-e67065ffa88d",
+        "d5d9b276-ec66-5439-b4e9-f1e10ee9aae0",
+        "fecacba3-9cbb-5576-8dcd-c80a48265889",
+        "d6a2a848-6cc9-5b70-bd9d-cf3dc0e80172",
+        "b49386d2-1a7e-5bff-8fa3-7f97cc7eafa4",
+        "1ee7799e-03f7-54a8-a97e-0dba93c865cc",
+        "c008299e-9170-54c6-9bb4-53c3a0b04776",
+        "a66a60e5-d1c2-531c-a356-da6921e72009",
+        "709240b6-5b58-537f-9601-c622ef61cfc0",
+        "95fce3ad-e763-57b6-a9c2-981c71953e03",
+        "40a70621-d9f6-5b3e-b0b9-8f92cae46d80",
+        "6ad31007-5b10-544b-b775-af9bc2011085",
+        "ff1e4028-2f1f-5c58-9c5d-b82df030121b",
+        "b190a6ac-876d-58b8-a882-847b23dd0062",
+        "2b3f5a60-8e0f-5c3e-8a50-ed0093e6e4a9",
+        "efd662b5-efc1-5f59-bfe9-a61e04b91d7d",
+        "c5d1c264-2d3b-55fb-9fe3-d7ec14d7c828",
+        "3b06e90c-7361-519a-8327-12b5bd1fdef3",
+        "889080b9-05be-595f-9050-dfe2b8872f62",
+        "c5ff9b04-20e4-558f-b83a-ea8037fd5595",
+        "2657b31f-f825-5e3e-b718-4ed34997b646"
+      ]
+    }
+  ],
+  "postSnapshot": {
+    "timestamp": "2026-10-28T15:07:16.233Z",
+    "totalCategories": 30,
+    "activeCategories": 22,
+    "destroyedCategories": 8,
+    "totalCourses": 648,
+    "activeCourses": 647,
+    "destroyedCourses": 1,
+    "approvedCourses": 610,
+    "pendingCourses": 30,
+    "rejectedCourses": 8,
+    "teacherCourses": {
+      "teacher02": 185,
+      "teacher_cntt": 181,
+      "giaovientrungquoc": 181
+    }
+  },
+  "durationMs": 247,
+  "status": "EXECUTION_SUCCESS"
+}

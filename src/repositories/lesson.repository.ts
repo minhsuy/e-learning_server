@@ -20,6 +20,8 @@ export const LESSON_PUBLIC_SELECT = {
   duration: true,
   type: true,
   isDemo: true,
+  bunnyVideoId: true,
+  videoStatus: true,
   createdAt: true,
   updatedAt: true
 } as const satisfies Prisma.LessonSelect
@@ -30,7 +32,7 @@ export type LessonPublicPayload = Prisma.LessonGetPayload<{
 
 /**
  * Full lesson study projection for authorized enrolled users and instructors.
- * Contains instructional content and video streaming URL.
+ * Contains instructional content, video streaming URL, and AI content.
  */
 export const LESSON_STUDY_SELECT = {
   id: true,
@@ -45,12 +47,46 @@ export const LESSON_STUDY_SELECT = {
   content: true,
   isDemo: true,
   videoUrl: true,
+  bunnyVideoId: true,
+  videoStatus: true,
+  transcript: true,
+  transcriptOriginal: true,
+  transcriptRefined: true,
+  summary: true,
+  aiProcessingStatus: true,
+  aiProcessedAt: true,
   createdAt: true,
   updatedAt: true
 } as const satisfies Prisma.LessonSelect
 
 export type LessonStudyPayload = Prisma.LessonGetPayload<{
   select: typeof LESSON_STUDY_SELECT
+}>
+
+/**
+ * Dedicated AI content projection for transcript and summary inspection.
+ * Includes operational aiProcessingError and tracking metadata.
+ */
+export const LESSON_AI_CONTENT_SELECT = {
+  id: true,
+  title: true,
+  chapterId: true,
+  courseId: true,
+  authorId: true,
+  isDemo: true,
+  bunnyVideoId: true,
+  transcript: true,
+  transcriptOriginal: true,
+  transcriptRefined: true,
+  summary: true,
+  aiProcessingStatus: true,
+  aiProcessedAt: true,
+  aiProcessingError: true,
+  updatedAt: true
+} as const satisfies Prisma.LessonSelect
+
+export type LessonAiContentPayload = Prisma.LessonGetPayload<{
+  select: typeof LESSON_AI_CONTENT_SELECT
 }>
 
 /**
@@ -108,6 +144,21 @@ export const createLesson = addLesson
  * Update an existing lesson by primary key UUID.
  */
 export const updateLesson = async (
+  id: string,
+  data: Prisma.LessonUpdateInput,
+  tx?: PrismaTransactionClient
+): Promise<Lesson> => {
+  const client = tx || prisma
+  return client.lesson.update({
+    where: { id },
+    data
+  })
+}
+
+/**
+ * Update AI transcript, summary, and lifecycle fields on a lesson.
+ */
+export const updateLessonAiContent = async (
   id: string,
   data: Prisma.LessonUpdateInput,
   tx?: PrismaTransactionClient

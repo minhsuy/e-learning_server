@@ -10,6 +10,7 @@ import {
   getListTeachersService,
   getMeService,
   loginUserService,
+  loginWithGoogleService,
   logoutUserService,
   registerUserService,
   resetPasswordService,
@@ -63,6 +64,30 @@ export const loginController = asyncHandler(async (req: Request, res: Response):
     success: true,
     access_token: result.access_token,
     refresh_token: result.refresh_token,
+    message: result.message
+  })
+})
+
+// Google Login POST /api/users/google-login
+export const googleLoginController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const result = await loginWithGoogleService(req.body)
+
+  if (!result.success) {
+    if (result.errors) {
+      return res.status(result.statusCode ?? 400).json({ errors: result.errors })
+    }
+    return res.status(result.statusCode ?? 400).json({
+      success: false,
+      message: result.message
+    })
+  }
+
+  res.status(200).json({
+    success: true,
+    access_token: result.access_token,
+    refresh_token: result.refresh_token,
+    data: result.data,
+    user: result.data,
     message: result.message
   })
 })

@@ -16,6 +16,7 @@ import { z } from 'zod'
 
 export const certificateBaseSchema = z.object({
   id: z.string().uuid(),
+  code: z.string().optional().nullable(),
   userId: z.string().uuid(),
   courseId: z.string().uuid(),
   grade: z.number().min(0).max(100),
@@ -37,6 +38,7 @@ export const createCertificateInputSchema = z.object({
 export const createCertificateDataSchema = z.object({
   userId: z.string().uuid(),
   courseId: z.string().uuid(),
+  code: z.string().optional(),
   grade: z.number().min(0).max(100),
   certificateUrl: z.string(),
   issuedAt: z.date().optional()
@@ -49,6 +51,7 @@ export const createCertificateDataSchema = z.object({
 export const certificatePublicResponseSchema = z.object({
   id: z.string().uuid(),
   _id: z.string().optional(),
+  code: z.string().optional().nullable(),
   userId: z.string().uuid(),
   courseId: z.string().uuid(),
   grade: z.number(),

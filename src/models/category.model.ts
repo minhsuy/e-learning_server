@@ -35,6 +35,8 @@ export const categoryPublicSchema = categorySchema.pick({
   slug: true,
   description: true,
   createdAt: true
+}).extend({
+  courseCount: z.number().int().nonnegative().optional()
 })
 
 export const categoryCompactSchema = categorySchema.pick({

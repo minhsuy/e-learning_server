@@ -146,13 +146,18 @@ export const getCoursesByTeacherService = async (
     success: true,
     message: 'Fetched teacher courses successfully!',
     data: {
-      courses: result.courses.map((c) => ({
-        ...withCompatId(c),
-        price: Number(c.price),
-        old_price: Number(c.oldPrice),
-        oldPrice: Number(c.oldPrice),
-        category: c.category ? withCompatId(c.category) : null
-      })),
+      courses: result.courses.map((c: any) => {
+        const studentCount = c._count?.enrollments ?? Number(c.sold || 0)
+        return {
+          ...withCompatId(c),
+          price: Number(c.price),
+          old_price: Number(c.oldPrice),
+          oldPrice: Number(c.oldPrice),
+          sold: studentCount,
+          totalStudents: studentCount,
+          category: c.category ? withCompatId(c.category) : null
+        }
+      }),
       pagination: {
         page: result.page,
         limit: result.limit,

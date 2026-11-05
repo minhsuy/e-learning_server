@@ -2,17 +2,20 @@ import { EEnrollmentStatus } from '@prisma/client'
 import {
   countCompletedLessons,
   findCompletedLessonsByUserAndCourse,
+  findProgress,
   upsertProgress
 } from '~/repositories/progress.repository'
 import { countLessons, findLessonById, findLessonsByCourse } from '~/repositories/lesson.repository'
 import { findCourseById } from '~/repositories/course.repository'
 import { findEnrollmentByUserAndCourse, updateEnrollmentProgress } from '~/repositories/enrollment.repository'
+import { awardLessonCompletionXP } from '~/services/xp.service'
+import { recordLearningActivityStreak } from '~/services/streak.service'
 import { ServiceResponse } from '~/types/type'
 import { withCompatId } from '~/utils/uuid'
 
 /**
  * TMDEMY — PROGRESS SERVICE
- * 
+ *
  * Manages lesson completion and course progress tracking.
  * Single source of truth: PostgreSQL via Functional Repositories.
  */
@@ -44,7 +47,11 @@ export const markLessonCompleteService = async ({
     return { success: false, statusCode: 403, message: 'You are not enrolled in this course' }
   }
 
-  // 4. Upsert Progress record
+  // 4. Check whether lesson was already completed (prevent double-counting)
+  const existingProgress = await findProgress(userId, lessonId)
+  const wasAlreadyCompleted = existingProgress?.completed === true
+
+  // 5. Upsert Progress record
   await upsertProgress({
     userId,
     courseId,
@@ -52,20 +59,31 @@ export const markLessonCompleteService = async ({
     completed: true
   })
 
-  // 5. Recalculate Course progress percentage
+  // 6. Recalculate Course progress percentage
   const totalLessons = await countLessons({ courseId })
   const completedLessons = await countCompletedLessons(userId, courseId)
   const percent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
 
-  // 6. Update Enrollment progress in PostgreSQL
+  // 7. Update Enrollment progress in PostgreSQL
   const isCompleted = percent === 100
   await updateEnrollmentProgress(
     userId,
     courseId,
     percent,
     isCompleted ? EEnrollmentStatus.COMPLETED : enrollment.status,
-    isCompleted ? (enrollment.completedAt || new Date()) : enrollment.completedAt
+    isCompleted ? enrollment.completedAt || new Date() : enrollment.completedAt
   )
+
+  // 8. Award Lesson Completion XP and update Streak atomically if not already completed
+  if (!wasAlreadyCompleted) {
+    try {
+      await awardLessonCompletionXP({ userId, lessonId })
+      await recordLearningActivityStreak({ userId })
+    } catch {
+      // Non-blocking fallback for edge cases; gamification services handle
+      // idempotency and database unique conflicts internally.
+    }
+  }
 
   return {
     success: true,
@@ -119,13 +137,7 @@ export const unmarkLessonCompleteService = async ({
   const newStatus = percent < 100 && wasCompleted ? EEnrollmentStatus.ACTIVE : enrollment.status
   const newCompletedAt = percent < 100 && wasCompleted ? null : enrollment.completedAt
 
-  await updateEnrollmentProgress(
-    userId,
-    courseId,
-    percent,
-    newStatus,
-    newCompletedAt
-  )
+  await updateEnrollmentProgress(userId, courseId, percent, newStatus, newCompletedAt)
 
   return {
     success: true,

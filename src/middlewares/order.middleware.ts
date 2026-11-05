@@ -33,7 +33,17 @@ export const updateOrderStatusValidator = [
       const s = String(val).toLowerCase()
       return Object.values(EOrderStatus).includes(s as EOrderStatus)
     })
-    .withMessage('Invalid order status')
+    .withMessage('Invalid order status'),
+
+  body('rejectedReason')
+    .optional({ checkFalsy: true, nullable: true })
+    .isString()
+    .withMessage('rejectedReason must be a string'),
+
+  body('reason')
+    .optional({ checkFalsy: true, nullable: true })
+    .isString()
+    .withMessage('reason must be a string')
 ]
 
 export const getOrdersValidator = [

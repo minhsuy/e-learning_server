@@ -17,6 +17,7 @@ export const COMMENT_DETAIL_SELECT = {
   parentId: true,
   level: true,
   status: true,
+  moderationNote: true,
   createdAt: true,
   updatedAt: true,
   user: {
@@ -184,6 +185,23 @@ export const deleteCommentById = async (
   const client = tx ?? prisma
   return client.comment.delete({
     where: { id },
+    select: COMMENT_DETAIL_SELECT
+  })
+}
+
+export const updateCommentStatus = async (
+  id: string,
+  status: CommentStatus,
+  moderationNote?: string | null,
+  tx?: PrismaTransactionClient
+): Promise<CommentDetailPayload | null> => {
+  const client = tx ?? prisma
+  return client.comment.update({
+    where: { id },
+    data: {
+      status,
+      ...(moderationNote !== undefined ? { moderationNote } : {})
+    },
     select: COMMENT_DETAIL_SELECT
   })
 }

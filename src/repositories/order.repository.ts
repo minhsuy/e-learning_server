@@ -47,6 +47,8 @@ export const ORDER_DETAIL_SELECT = {
   couponId: true,
   courseId: true,
   userId: true,
+  rejectedReason: true,
+  rejectedAt: true,
   createdAt: true,
   updatedAt: true,
   course: {
@@ -74,6 +76,8 @@ export const ORDER_PUBLIC_SELECT = {
   couponId: true,
   courseId: true,
   userId: true,
+  rejectedReason: true,
+  rejectedAt: true,
   createdAt: true,
   updatedAt: true
 } as const satisfies Prisma.OrderSelect
@@ -315,6 +319,26 @@ export const updateOrderStatus = async (
   return client.order.update({
     where: { id },
     data: { status },
+    select: ORDER_DETAIL_SELECT
+  })
+}
+
+/**
+ * Update order status with rejection details.
+ */
+export const updateOrderStatusWithDetails = async (
+  id: string,
+  data: {
+    status: EOrderStatus
+    rejectedReason?: string | null
+    rejectedAt?: Date | null
+  },
+  tx?: PrismaTransactionClient
+): Promise<OrderDetailPayload> => {
+  const client = tx || prisma
+  return client.order.update({
+    where: { id },
+    data,
     select: ORDER_DETAIL_SELECT
   })
 }

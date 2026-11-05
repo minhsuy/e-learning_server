@@ -73,6 +73,7 @@ export const courseSchema = z.object({
   categoryId: z.string().uuid().nullable().optional(),
   authorId: z.string().uuid(),
   isDestroyed: z.boolean().default(false),
+  rejectionReason: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date()
 })
@@ -101,6 +102,7 @@ export const coursePublicSchema = courseSchema.pick({
   documents: true,
   categoryId: true,
   authorId: true,
+  rejectionReason: true,
   createdAt: true,
   updatedAt: true
 })
@@ -124,6 +126,18 @@ export const courseDetailResponseSchema = coursePublicSchema.extend({
   }).nullable().optional(),
   faqs: z.array(courseFaqSchema).optional(),
   info: courseInfoCompatibilitySchema.optional()
+})
+
+export const courseCatalogItemSchema = coursePublicSchema.extend({
+  author: userCompactSchema.optional(),
+  category: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    slug: z.string()
+  }).nullable().optional(),
+  averageRating: z.number().default(0),
+  ratingCount: z.number().int().default(0),
+  totalDuration: z.number().int().default(0)
 })
 
 // ==========================================
@@ -166,6 +180,7 @@ export type CourseInfoCompatibility = z.infer<typeof courseInfoCompatibilitySche
 export type CoursePublic = z.infer<typeof coursePublicSchema>
 export type CourseCompact = z.infer<typeof courseCompactSchema>
 export type CourseDetailResponse = z.infer<typeof courseDetailResponseSchema>
+export type CourseCatalogItem = z.infer<typeof courseCatalogItemSchema>
 export type CreateCourseInput = z.infer<typeof createCourseInputSchema>
 export type UpdateCourseInput = z.infer<typeof updateCourseInputSchema>
 export type UpdateCourseStatusInput = z.infer<typeof updateCourseStatusInputSchema>

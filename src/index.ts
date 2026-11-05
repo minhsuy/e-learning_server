@@ -4,9 +4,12 @@ import { indexRoutes } from './routes/index.route'
 import dotenv from 'dotenv'
 import { errorHandler } from './middlewares/errorHandler'
 import './cronJobs/deleteUnverifiedUsers'
+import './cronJobs/aiJobReconciliation.cron'
 import http from 'http'
 import { initSocket } from './socket/initSocket'
 import cors from 'cors'
+import { initTelegramBot, stopTelegramBot } from './telegram/bot'
+
 dotenv.config()
 const app = express()
 connectPrisma().catch((err) => {
@@ -37,4 +40,21 @@ const server = http.createServer(app)
 const io = initSocket(server)
 server.listen(port, () => {
   console.log(`Server is running on port : http://localhost:${port}`)
+  // Initialize Telegram Teacher Bot (TG-01) in background
+  initTelegramBot().catch((err) => {
+    console.error('[TelegramBot] Initialization error:', err.message)
+  })
 })
+
+// Graceful shutdown handling
+const handleShutdown = async (signal: string) => {
+  console.log(`[Server] Received ${signal}. Shutting down gracefully...`)
+  await stopTelegramBot()
+  server.close(() => {
+    console.log('[Server] HTTP server closed.')
+    process.exit(0)
+  })
+}
+
+process.on('SIGINT', () => handleShutdown('SIGINT'))
+process.on('SIGTERM', () => handleShutdown('SIGTERM'))

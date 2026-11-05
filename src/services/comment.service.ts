@@ -7,7 +7,8 @@ import {
   findCommentById,
   findCommentsByLessonId,
   findCommentsWithFilter,
-  updateCommentContent
+  updateCommentContent,
+  updateCommentStatus
 } from '~/repositories/comment.repository'
 import {
   createReaction,
@@ -20,7 +21,7 @@ import { findUserById } from '~/repositories/user.repository'
 import { findEnrollmentByUserAndCourse } from '~/repositories/enrollment.repository'
 import { ENotificationType } from '~/types/enum'
 import { ServiceResponse } from '~/types/type'
-import { withCompatId } from '~/utils/uuid'
+import { isValidUUID, withCompatId } from '~/utils/uuid'
 import { pushNotificationService } from './notification.service'
 
 /**
@@ -39,6 +40,7 @@ export interface SerializedCommentResponse {
   course: { id: string; _id: string; title: string; slug: string }
   user: { id: string; _id: string; username: string; avatar: string }
   status: CommentStatus
+  moderationNote?: string | null
   parentId: string | null
   level: number
   likes: string[]
@@ -74,6 +76,7 @@ export const serializeComment = (comment: CommentDetailPayload): SerializedComme
       avatar: comment.user.avatar || ''
     }),
     status: comment.status,
+    moderationNote: (comment as any).moderationNote ?? null,
     parentId: comment.parentId,
     level: comment.level,
     likes,
@@ -157,7 +160,14 @@ export const createCommentService = async ({
         receiverId: parentComment.userId,
         type: ENotificationType.COMMENT_REPLY,
         message: `${senderUser?.username || 'Người dùng'} vừa trả lời bình luận của bạn: "${content}"`,
-        relatedId: lesson
+        relatedId: lesson,
+        metadata: {
+          courseId: courseDoc.id,
+          courseSlug: courseDoc.slug,
+          lessonId: lesson,
+          commentId: comment.id,
+          parentId: parentComment.id
+        }
       })
     } else if (!parentId && courseDoc.authorId !== userId) {
       const commenter = await findUserById(userId)
@@ -166,7 +176,13 @@ export const createCommentService = async ({
         receiverId: courseDoc.authorId,
         type: ENotificationType.COMMENT,
         message: `Học viên ${commenter?.username || 'Người dùng'} vừa bình luận về khóa học "${courseDoc.title}"`,
-        relatedId: lesson
+        relatedId: lesson,
+        metadata: {
+          courseId: courseDoc.id,
+          courseSlug: courseDoc.slug,
+          lessonId: lesson,
+          commentId: comment.id
+        }
       })
     }
   } catch (notifErr) {
@@ -269,6 +285,10 @@ export const getCommentsByAdminOrTeacherService = async ({
       filterStatus = CommentStatus.PENDING
     } else if (s === 'inactive' || s === 'rejected') {
       filterStatus = CommentStatus.REJECTED
+    } else if (s === 'hidden') {
+      filterStatus = CommentStatus.HIDDEN
+    } else if (s === 'flagged') {
+      filterStatus = CommentStatus.FLAGGED
     }
   }
 
@@ -463,5 +483,51 @@ export const deleteCommentByAdminOrTeacherService = async ({
   return {
     success: true,
     message: 'Comment deleted successfully'
+  }
+}
+
+export const updateCommentStatusService = async ({
+  commentId,
+  status,
+  moderationNote
+}: {
+  commentId: string
+  status: string
+  moderationNote?: string
+}): Promise<ServiceResponse> => {
+  if (!isValidUUID(commentId)) {
+    return { success: false, statusCode: 400, message: 'Invalid comment ID' }
+  }
+
+  const comment = await findCommentById(commentId)
+  if (!comment) {
+    return { success: false, statusCode: 404, message: 'Comment not found' }
+  }
+
+  const normalizedStatus = (status || '').toUpperCase()
+  let targetStatus: CommentStatus
+  if (normalizedStatus === 'APPROVED' || normalizedStatus === 'ACTIVE') {
+    targetStatus = CommentStatus.APPROVED
+  } else if (normalizedStatus === 'PENDING') {
+    targetStatus = CommentStatus.PENDING
+  } else if (normalizedStatus === 'REJECTED' || normalizedStatus === 'INACTIVE') {
+    targetStatus = CommentStatus.REJECTED
+  } else if (normalizedStatus === 'HIDDEN') {
+    targetStatus = CommentStatus.HIDDEN
+  } else if (normalizedStatus === 'FLAGGED') {
+    targetStatus = CommentStatus.FLAGGED
+  } else {
+    return { success: false, statusCode: 400, message: 'Invalid comment status' }
+  }
+
+  const updated = await updateCommentStatus(commentId, targetStatus, moderationNote ?? null)
+  if (!updated) {
+    return { success: false, statusCode: 500, message: 'Failed to update comment status' }
+  }
+
+  return {
+    success: true,
+    message: 'Trạng thái bình luận đã được cập nhật thành công',
+    data: serializeComment(updated)
   }
 }

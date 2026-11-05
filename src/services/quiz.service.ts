@@ -4,6 +4,7 @@ import {
   findQuizById,
   findQuizByLessonId,
   findQuizByLessonIdWithPublicQuestions,
+  findQuizByLessonIdWithDetail,
   createQuiz,
   updateQuiz,
   deleteQuiz
@@ -201,14 +202,64 @@ export const deleteQuizService = async (
 }
 
 /**
- * Get quizzes for a specific lesson (Student / Public access):
- * - Anti-Cheat rule: STRICTLY OMITS `answer` field
+ * Get quizzes for a specific lesson:
+ * - When requested by the course author (Teacher) or Admin: includes `answer` for management
+ * - When requested by Student or Public: Anti-Cheat rule STRICTLY OMITS `answer` field
  * - Returns legacy array structure `data: [quiz]`
  */
 export const getQuizzesByLessonService = async (
   lessonId: string,
+  userContext?: { userId?: string; role?: string },
   tx?: PrismaTransactionClient
 ): Promise<ServiceResponse> => {
+  let isAuthorizedTeacherOrAdmin = false
+
+  if (userContext?.userId && userContext?.role) {
+    const normalizedRole = userContext.role.toLowerCase()
+    if (normalizedRole === 'admin') {
+      isAuthorizedTeacherOrAdmin = true
+    } else if (normalizedRole === 'teacher') {
+      const lessonDoc = await findLessonById(lessonId, tx)
+      if (lessonDoc) {
+        const courseDoc = await findCourseById(lessonDoc.courseId, tx)
+        if (courseDoc && courseDoc.authorId === userContext.userId) {
+          isAuthorizedTeacherOrAdmin = true
+        }
+      }
+    }
+  }
+
+  if (isAuthorizedTeacherOrAdmin) {
+    const quizDetail = await findQuizByLessonIdWithDetail(lessonId, tx)
+    if (!quizDetail) {
+      return { success: false, statusCode: 404, message: 'No quizzes found for this lesson' }
+    }
+
+    const formattedQuiz = {
+      ...withCompatId(quizDetail),
+      lesson: quizDetail.lessonId,
+      courseId: quizDetail.courseId,
+      passing_grade: quizDetail.passingGrade,
+      created_by: quizDetail.createdById,
+      questions: quizDetail.questions.map((q) => ({
+        ...withCompatId(q),
+        quiz: q.quizId,
+        type: q.type.toLowerCase(),
+        title: q.title,
+        options: q.options.map((opt) => opt.optionText),
+        answer: q.answer,
+        points: q.points
+      }))
+    }
+
+    return {
+      success: true,
+      message: 'Quizzes fetched successfully',
+      data: [formattedQuiz]
+    }
+  }
+
+  // Student / Public access (Anti-Cheat: STRICTLY OMITS `answer` field)
   const quiz = await findQuizByLessonIdWithPublicQuestions(lessonId, tx)
 
   if (!quiz) {
@@ -228,7 +279,7 @@ export const getQuizzesByLessonService = async (
       title: q.title,
       options: q.options.map((opt) => opt.optionText),
       points: q.points
-      // Strictly NO `answer` field!
+      // Strictly NO `answer` field for students / public!
     }))
   }
 

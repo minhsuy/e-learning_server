@@ -10,9 +10,9 @@ export const isAdmin = asyncHandler((req: Request, res: Response, next: NextFunc
     })
   }
 
-  const { role } = req.user
+  const role = (req.user.role || '').toLowerCase()
 
-  if (role !== UserRole.ADMIN) {
+  if (role !== 'admin') {
     return res.status(403).json({
       success: false,
       message: 'FORBIDDEN - Admin role required'
@@ -29,9 +29,9 @@ export const isTeacher = asyncHandler((req: Request, res: Response, next: NextFu
     })
   }
 
-  const { role } = req.user
+  const role = (req.user.role || '').toLowerCase()
 
-  if (role !== UserRole.TEACHER) {
+  if (role !== 'teacher') {
     return res.status(403).json({
       success: false,
       message: 'FORBIDDEN - Teacher role required'
@@ -48,9 +48,9 @@ export const isTeacherOrAdmin = asyncHandler((req: Request, res: Response, next:
     })
   }
 
-  const { role } = req.user
+  const role = (req.user.role || '').toLowerCase()
 
-  if (role !== UserRole.ADMIN && role !== UserRole.TEACHER) {
+  if (role !== 'admin' && role !== 'teacher') {
     return res.status(403).json({
       success: false,
       message: 'FORBIDDEN - Teacher or Admin role required'

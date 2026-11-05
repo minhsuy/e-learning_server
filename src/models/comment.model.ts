@@ -48,6 +48,7 @@ export const commentBaseSchema = z.object({
   parentId: z.string().uuid().nullable().optional(),
   level: z.number().int().min(0).default(0),
   status: commentStatusEnum.default(CommentStatus.APPROVED),
+  moderationNote: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date()
 })
@@ -83,6 +84,7 @@ export interface SerializedComment {
   course: string | { id?: string; _id?: string; title: string; slug?: string }
   user: string | { id?: string; _id?: string; username: string; avatar: string }
   status: CommentStatus | string
+  moderationNote?: string | null
   parentId: string | null
   level: number
   likes: string[]

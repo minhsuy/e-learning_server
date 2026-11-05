@@ -1,4 +1,4 @@
-import { PrismaTransactionClient } from '~/config/prisma'
+import { prisma, PrismaTransactionClient } from '~/config/prisma'
 import {
   findSubmissionDetailByQuizAndUser,
   findSubmissionByQuizAndUser,
@@ -12,6 +12,8 @@ import { findQuizById } from '~/repositories/quiz.repository'
 import { findQuestionsByQuizIdStudy } from '~/repositories/question.repository'
 import { findUserById } from '~/repositories/user.repository'
 import { findCourseById } from '~/repositories/course.repository'
+import { awardQuizCompletionXP } from './xp.service'
+import { recordLearningActivityStreak } from './streak.service'
 import { pushNotificationService } from './notification.service'
 import { ENotificationType } from '~/types/enum'
 import { ServiceResponse } from '~/types/type'
@@ -134,21 +136,37 @@ export const submitQuizService = async (
 
   const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0
 
-  // 8. Atomically persist submission and answers in PostgreSQL
+  // 8. Atomically persist submission, answers, Quiz XP, and Streak in PostgreSQL
   let submission: SubmissionDetailPayload
   try {
-    submission = await createSubmissionWithAnswers(
-      {
-        quizId,
-        userId,
-        score,
-        totalPoints,
-        percentage,
-        completedAt: new Date(),
-        answers: submissionAnswers
-      },
-      tx
-    )
+    const executeSubmissionWithGamification = async (clientTx: PrismaTransactionClient) => {
+      const created = await createSubmissionWithAnswers(
+        {
+          quizId,
+          userId,
+          score,
+          totalPoints,
+          percentage,
+          completedAt: new Date(),
+          answers: submissionAnswers
+        },
+        clientTx
+      )
+
+      // Award Quiz XP (+100 XP) and update Streak (+20 XP if first activity today) within the same atomic transaction
+      await awardQuizCompletionXP({ userId, quizId }, clientTx)
+      await recordLearningActivityStreak({ userId }, clientTx)
+
+      return created
+    }
+
+    if (tx) {
+      submission = await executeSubmissionWithGamification(tx)
+    } else {
+      submission = await prisma.$transaction(async (clientTx) => {
+        return executeSubmissionWithGamification(clientTx)
+      })
+    }
   } catch (err: unknown) {
     // Handle concurrent submission race conditions via code inspection
     if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'P2002') {

@@ -56,6 +56,8 @@ export const orderBaseSchema = z.object({
     (val) => (typeof val === 'string' ? val.toLowerCase() : val),
     z.nativeEnum(EOrderStatus)
   ).default(EOrderStatus.PENDING),
+  rejectedReason: z.string().nullable().optional(),
+  rejectedAt: z.date().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date()
 })
@@ -74,7 +76,8 @@ export const updateOrderStatusInputSchema = z.object({
   status: z.preprocess(
     (val) => (typeof val === 'string' ? val.toLowerCase() : val),
     z.nativeEnum(EOrderStatus, { errorMap: () => ({ message: 'Invalid order status' }) })
-  )
+  ),
+  rejectedReason: z.string().trim().optional()
 })
 
 // ==========================================

@@ -66,7 +66,20 @@ export const getCommentsQueryValidator = [
   query('status')
     .optional()
     .custom((value) => {
-      const allowed = ['active', 'inactive', 'approved', 'pending', 'rejected', 'APPROVED', 'PENDING', 'REJECTED']
+      const allowed = [
+        'active',
+        'inactive',
+        'approved',
+        'pending',
+        'rejected',
+        'hidden',
+        'flagged',
+        'APPROVED',
+        'PENDING',
+        'REJECTED',
+        'HIDDEN',
+        'FLAGGED'
+      ]
       if (!allowed.includes(value)) {
         throw new Error('Invalid status')
       }
@@ -90,3 +103,39 @@ export const updateCommentValidator = [
     .isLength({ min: 3 })
     .withMessage('Content must be at least 3 characters long')
 ]
+
+export const updateCommentStatusValidator = [
+  param('id')
+    .notEmpty()
+    .withMessage('Comment ID is required')
+    .custom((value) => isValidUUID(value))
+    .withMessage('Invalid Comment ID'),
+
+  body('status')
+    .notEmpty()
+    .withMessage('Status is required')
+    .custom((value) => {
+      const allowed = [
+        'APPROVED',
+        'PENDING',
+        'REJECTED',
+        'HIDDEN',
+        'FLAGGED',
+        'approved',
+        'pending',
+        'rejected',
+        'hidden',
+        'flagged'
+      ]
+      if (!allowed.includes(value)) {
+        throw new Error('Invalid status. Allowed values: APPROVED, PENDING, REJECTED, HIDDEN, FLAGGED')
+      }
+      return true
+    }),
+
+  body('moderationNote')
+    .optional({ checkFalsy: true, nullable: true })
+    .isString()
+    .withMessage('moderationNote must be a string')
+]
+

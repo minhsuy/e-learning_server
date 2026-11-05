@@ -93,6 +93,19 @@ export const findEnrollmentByUserAndCourse = async (
 }
 
 /**
+ * Find an enrollment record by its primary key UUID.
+ */
+export const findEnrollmentById = async (
+  id: string,
+  tx?: PrismaTransactionClient
+): Promise<Enrollment | null> => {
+  const client = tx || prisma
+  return client.enrollment.findUnique({
+    where: { id }
+  })
+}
+
+/**
  * Count active/total enrollments for a specific course UUID.
  * Preserved for Phase 5 Quiz Submission compatibility.
  */
@@ -302,8 +315,8 @@ export const deleteEnrollment = async (
 }
 
 /**
- * Find active enrolled user IDs for a given course UUID.
- * Used for course/lesson notification dispatching.
+ * Find enrolled user IDs (ACTIVE and COMPLETED) for a given course UUID.
+ * Used for course/lesson notification dispatching. Excludes CANCELED.
  */
 export const findActiveEnrolledUserIdsByCourseId = async (
   courseId: string,
@@ -313,7 +326,9 @@ export const findActiveEnrolledUserIdsByCourseId = async (
   const enrollments = await client.enrollment.findMany({
     where: {
       courseId,
-      status: EEnrollmentStatus.ACTIVE
+      status: {
+        in: [EEnrollmentStatus.ACTIVE, EEnrollmentStatus.COMPLETED]
+      }
     },
     select: {
       userId: true

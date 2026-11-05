@@ -8,7 +8,9 @@ import {
   getCommentsByAdminOrTeacherService,
   getCommentsByLessonService,
   likeCommentService,
-  updateCommentService
+  updateCommentContent,
+  updateCommentService,
+  updateCommentStatusService
 } from '~/services/comment.service'
 
 export const createCommentController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
@@ -109,3 +111,20 @@ export const deleteCommentByAdminOrTeacherController = asyncHandler(
     return res.status(result.statusCode || 200).json(result)
   }
 )
+
+// Update comment status (Admin) : PATCH /api/comments/admin/:id/status
+export const updateCommentStatusController = asyncHandler(
+  async (req: Request, res: Response): Promise<any> => {
+    const id = req.params.id as string
+    const { status, moderationNote } = req.body
+
+    const result = await updateCommentStatusService({
+      commentId: id,
+      status,
+      moderationNote
+    })
+
+    return res.status(result.statusCode || 200).json(result)
+  }
+)
+

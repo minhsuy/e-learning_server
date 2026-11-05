@@ -141,7 +141,7 @@ export const getUserDetailService = async ({ id }: { id: string }, tx?: PrismaTr
 
 // UPDATE USER BY ADMIN
 export const updateUserByAdminService = async (
-  { id, payload }: { id: string; payload: Record<string, any> },
+  { id, payload, performedBy }: { id: string; payload: Record<string, any>; performedBy?: string },
   tx?: PrismaTransactionClient
 ) => {
   if (!isValidUUID(id)) {
@@ -151,6 +151,35 @@ export const updateUserByAdminService = async (
   const user = await findUserById(id, undefined, tx)
   if (!user) {
     return { success: false, statusCode: 404, message: 'User not found' }
+  }
+
+  if (payload.locked !== undefined && payload.status === undefined) {
+    payload.status = payload.locked ? 'inactive' : 'active'
+  }
+
+  if (performedBy && user.id === performedBy) {
+    if (payload.status) {
+      const s = toPrismaStatus(payload.status)
+      if (s === PrismaUserStatus.INACTIVE) {
+        return {
+          success: false,
+          statusCode: 400,
+          errorCode: 'SELF_LOCK_BLOCKED',
+          message: 'Không thể tự khóa hoặc thay đổi vai trò của chính tài khoản quản trị đang đăng nhập'
+        }
+      }
+    }
+    if (payload.role) {
+      const r = toPrismaRole(payload.role)
+      if (r && r !== PrismaUserRole.ADMIN) {
+        return {
+          success: false,
+          statusCode: 400,
+          errorCode: 'SELF_DEMOTE_BLOCKED',
+          message: 'Không thể tự khóa hoặc thay đổi vai trò của chính tài khoản quản trị đang đăng nhập'
+        }
+      }
+    }
   }
 
   if (payload.username && payload.username.trim() !== user.username) {
@@ -473,8 +502,9 @@ export const updateCourseStatusForTeacherService = async (
 
   const previousStatus = course.status
   const targetStatus = payload.status !== undefined ? toPrismaCourseStatus(payload.status) : previousStatus
+  const rejectionReason = payload.rejectionReason || payload.reason || null
 
-  const updated = await updateCourseStatus(courseId, targetStatus, tx)
+  const updated = await updateCourseStatus(courseId, targetStatus, { rejectionReason }, tx)
 
   if (previousStatus !== PrismaCourseStatus.APPROVED && targetStatus === PrismaCourseStatus.APPROVED) {
     const teacherId = course.authorId
@@ -485,6 +515,22 @@ export const updateCourseStatusForTeacherService = async (
         receiverId: teacherId,
         type: ENotificationType.COURSE,
         message: `Khóa học "${course.title}" của bạn đã được admin duyệt!`,
+        relatedId: course.id
+      })
+    } catch {
+      // Non-blocking notification dispatch
+    }
+  } else if (previousStatus !== PrismaCourseStatus.REJECTED && targetStatus === PrismaCourseStatus.REJECTED) {
+    const teacherId = course.authorId
+
+    try {
+      await pushNotificationService({
+        senderId: null,
+        receiverId: teacherId,
+        type: ENotificationType.COURSE,
+        message: rejectionReason
+          ? `Khóa học "${course.title}" bị từ chối với lý do: ${rejectionReason}`
+          : `Khóa học "${course.title}" của bạn đã bị từ chối duyệt.`,
         relatedId: course.id
       })
     } catch {

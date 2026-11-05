@@ -24,8 +24,9 @@ export const getAllUsersController = asyncHandler(async (req: Request, res: Resp
 
 export const updateUserByAdminController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { id } = req.params
+  const performedBy = (req.user as any)?.userId || (req.user as any)?.id
 
-  const result = await updateUserByAdminService({ id, payload: req.body })
+  const result = await updateUserByAdminService({ id, payload: req.body, performedBy })
 
   if (!result.success) {
     const status = result.statusCode ?? 400

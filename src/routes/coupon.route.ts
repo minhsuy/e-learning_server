@@ -7,6 +7,7 @@ import {
   getCouponsController,
   updateCouponController
 } from '~/controller/coupon.controller'
+import { getAdminCouponStatsController } from '~/controller/adminStatistic.controller'
 import {
   checkCouponValidator,
   couponIdValidator,
@@ -56,6 +57,15 @@ couponRouter.get(
   handleValidationErrors,
   getCouponsController
 )
+
+// GET COUPON STATISTICS (ADMIN) : GET /api/coupons/admin/statistics
+couponRouter.get(
+  '/admin/statistics',
+  verifyAccessToken,
+  isAdmin,
+  getAdminCouponStatsController
+)
+
 // CHECK COUPON : POST /api/coupons/check
 couponRouter.post('/use', verifyAccessToken, checkCouponValidator, handleValidationErrors, checkCouponController)
 // GET COUPON DETAIL : GET /api/coupons/:id

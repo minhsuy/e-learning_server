@@ -11,7 +11,8 @@ import {
   findMyOrders,
   findOrderById,
   findOrdersWithFilter,
-  updateOrderStatus
+  updateOrderStatus,
+  updateOrderStatusWithDetails
 } from '~/repositories/order.repository'
 import {
   decrementCouponUsed,
@@ -59,6 +60,8 @@ const formatOrderResponse = (order: any) => {
     amount: Number(order.amount),
     discount: Number(order.discount),
     total: Number(order.total),
+    rejectedReason: order.rejectedReason ?? null,
+    rejectedAt: order.rejectedAt ?? null,
     course: order.course
       ? {
           ...withCompatId(order.course),
@@ -285,15 +288,23 @@ export const getMyOrdersService = async ({
 export const updateOrderStatusService = async (params: {
   id?: string
   orderId?: string
-  payload?: { status: EOrderStatus | string }
+  payload?: { status: EOrderStatus | string; rejectedReason?: string; reason?: string }
   status?: EOrderStatus | string
+  rejectedReason?: string
+  reason?: string
   userId: string
   role: string
 }): Promise<ServiceResponse> => {
   const orderId = params.id || params.orderId || ''
   const rawStatus = params.status || params.payload?.status || ''
+  const rejectionReason =
+    params.rejectedReason ||
+    params.reason ||
+    params.payload?.rejectedReason ||
+    params.payload?.reason ||
+    null
   const { userId, role } = params
-  const isTeacher = String(role).toLowerCase() === 'teacher'
+  const isAdmin = String(role).toLowerCase() === 'admin'
 
   if (!isValidUUID(orderId)) {
     return { success: false, statusCode: 400, message: 'Invalid Order ID' }
@@ -306,24 +317,25 @@ export const updateOrderStatusService = async (params: {
     return { success: false, statusCode: 404, message: 'Order not found' }
   }
 
-  // Idempotency guard: prevent duplicate processing and duplicate notifications if order is already in target status
-  if (order.status === targetStatus) {
-    return {
-      success: true,
-      message: `Order status is already ${targetStatus}`,
-      data: formatOrderResponse(order)
-    }
-  }
-
   // ==========================================
   // Defensive guard for historical orphan orders (course is null)
+  // Non-admin callers (Teachers) cannot own an orphan order
   // ==========================================
   if (!order.course || !order.courseId) {
-    if (isTeacher) {
+    if (!isAdmin) {
       return {
         success: false,
         statusCode: 403,
         message: 'You are not the owner of this course or the course no longer exists'
+      }
+    }
+
+    // Idempotency guard for orphan orders
+    if (order.status === targetStatus) {
+      return {
+        success: true,
+        message: `Order status is already ${targetStatus}`,
+        data: formatOrderResponse(order)
       }
     }
 
@@ -344,16 +356,25 @@ export const updateOrderStatusService = async (params: {
     }
 
     if (targetStatus === EOrderStatus.REJECTED) {
-      await prisma.$transaction(async (tx) => {
+      const updated = await prisma.$transaction(async (tx) => {
         if (order.couponId) {
           await decrementCouponUsed(order.couponId, 1, tx)
         }
-        await deleteOrderById(orderId, tx)
+        return updateOrderStatusWithDetails(
+          orderId,
+          {
+            status: EOrderStatus.REJECTED,
+            rejectedReason: rejectionReason,
+            rejectedAt: new Date()
+          },
+          tx
+        )
       })
 
       return {
         success: true,
-        message: 'Orphan pending order rejected and deleted successfully!'
+        message: 'Orphan pending order rejected successfully!',
+        data: formatOrderResponse(updated)
       }
     }
 
@@ -366,36 +387,56 @@ export const updateOrderStatusService = async (params: {
   }
 
   // ==========================================
-  // Normal order verification
+  // Normal order verification & Ownership check
+  // Non-admin callers (Teachers) MUST be the author of the course
   // ==========================================
   const course = await findCourseById(order.courseId)
-  if (isTeacher) {
+  if (!isAdmin) {
     if (!course || course.authorId !== userId) {
       return { success: false, statusCode: 403, message: 'You are not the owner of this course' }
     }
   }
 
+  // Idempotency guard: prevent duplicate processing and duplicate notifications if order is already in target status
+  // Placed AFTER ownership verification so unauthorized callers cannot inspect order status or bypass authorization
+  if (order.status === targetStatus) {
+    return {
+      success: true,
+      message: `Order status is already ${targetStatus}`,
+      data: formatOrderResponse(order)
+    }
+  }
+
   // ==========================================
-  // Handle REJECTED (Preserve Legacy Hard Delete per Owner Decision)
+  // Handle REJECTED (Preserve Order record in DB per BE-F9.11-006)
   // ==========================================
   if (targetStatus === EOrderStatus.REJECTED) {
-    await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx) => {
       if (order.status === EOrderStatus.COMPLETED) {
         // Rollback sold count and enrollment on PostgreSQL
-        await incrementCourseSoldCount(order.courseId!, -1, tx)
-        await deleteEnrollment(order.userId, order.courseId!, tx)
+        if (order.courseId) {
+          await incrementCourseSoldCount(order.courseId, -1, tx)
+          await deleteEnrollment(order.userId, order.courseId, tx)
+        }
         if (order.couponId) {
           await decrementCouponUsed(order.couponId, 1, tx)
         }
       }
-      await deleteOrderById(orderId, tx)
+      return updateOrderStatusWithDetails(
+        orderId,
+        {
+          status: EOrderStatus.REJECTED,
+          rejectedReason: rejectionReason,
+          rejectedAt: new Date()
+        },
+        tx
+      )
     })
-
-
 
     return {
       success: true,
-      message: 'Order rejected and deleted successfully!'
+      message: 'Order rejected successfully!',
+      data: formatOrderResponse(updated)
     }
   }
 
@@ -496,7 +537,8 @@ export const getOrdersService = async ({
 }): Promise<ServiceResponse> => {
   let teacherCourseIds: string[] | undefined
 
-  if (role === UserRole.TEACHER) {
+  const isTeacher = String(role).toLowerCase() === 'teacher'
+  if (isTeacher) {
     const teacherCourses = await findCoursesWithPagination({
       authorId: userId,
       limit: 1000

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { LessonType } from '@prisma/client'
+import { AiProcessingStatus, LessonType } from '@prisma/client'
 
 /**
  * TMDEMY — ZOD APPLICATION DOMAIN MODEL: LESSON
@@ -28,6 +28,16 @@ export const lessonSchema = z.object({
   content: z.string().default(''),
   isDemo: z.boolean().default(false),
   videoUrl: z.string().default(''),
+  bunnyVideoId: z.string().nullable().optional(),
+  videoStatus: z.string().nullable().optional(),
+  transcript: z.string().nullable().optional(),
+  transcriptOriginal: z.string().nullable().optional(),
+  transcriptRefined: z.string().nullable().optional(),
+  summary: z.string().nullable().optional(),
+  aiProcessingStatus: z.nativeEnum(AiProcessingStatus).nullable().optional(),
+  aiProcessedAt: z.date().nullable().optional(),
+  aiProcessingError: z.string().nullable().optional(),
+  aiGeneration: z.number().int().default(1),
   createdAt: z.date(),
   updatedAt: z.date()
 })
@@ -50,12 +60,15 @@ export const lessonPublicSchema = lessonSchema.pick({
   duration: true,
   type: true,
   isDemo: true,
+  bunnyVideoId: true,
+  videoStatus: true,
   createdAt: true,
   updatedAt: true
 })
 
 /**
- * Study schema: includes videoUrl and content for authorized students / demo access
+ * Study schema: includes videoUrl, content, and safe AI content for authorized students / demo access.
+ * Sensitive operational fields like aiProcessingError are strictly excluded.
  */
 export const lessonStudySchema = lessonSchema.pick({
   id: true,
@@ -70,6 +83,14 @@ export const lessonStudySchema = lessonSchema.pick({
   content: true,
   isDemo: true,
   videoUrl: true,
+  bunnyVideoId: true,
+  videoStatus: true,
+  transcript: true,
+  transcriptOriginal: true,
+  transcriptRefined: true,
+  summary: true,
+  aiProcessingStatus: true,
+  aiProcessedAt: true,
   createdAt: true,
   updatedAt: true
 })
@@ -99,7 +120,9 @@ export const createLessonInputSchema = z.object({
   type: z.nativeEnum(LessonType).optional().default(LessonType.VIDEO),
   content: z.string().optional().default(''),
   isDemo: z.boolean().optional().default(false),
-  videoUrl: z.string().optional().default('')
+  videoUrl: z.string().optional().default(''),
+  bunnyVideoId: z.string().optional(),
+  videoStatus: z.string().optional()
 })
 
 export const updateLessonInputSchema = z.object({
@@ -110,7 +133,35 @@ export const updateLessonInputSchema = z.object({
   type: z.nativeEnum(LessonType).optional(),
   content: z.string().optional(),
   isDemo: z.boolean().optional(),
-  videoUrl: z.string().optional()
+  videoUrl: z.string().optional(),
+  bunnyVideoId: z.string().nullable().optional(),
+  videoStatus: z.string().optional()
+})
+
+/**
+ * AI Content Payload schema for Step 6.5
+ */
+export const updateLessonAiContentInputSchema = z.object({
+  transcript: z.string().nullable().optional(),
+  transcriptOriginal: z.string().nullable().optional(),
+  transcriptRefined: z.string().nullable().optional(),
+  summary: z.string().nullable().optional(),
+  aiProcessingStatus: z.nativeEnum(AiProcessingStatus).optional(),
+  aiProcessingError: z.string().nullable().optional(),
+  bunnyVideoId: z.string().optional(),
+  clientTimestamp: z.string().or(z.date()).optional()
+})
+
+export const lessonAiContentResponseSchema = z.object({
+  id: z.string().uuid(),
+  transcript: z.string().nullable(),
+  transcriptOriginal: z.string().nullable().optional(),
+  transcriptRefined: z.string().nullable().optional(),
+  summary: z.string().nullable(),
+  aiProcessingStatus: z.nativeEnum(AiProcessingStatus).nullable(),
+  aiProcessedAt: z.date().nullable(),
+  aiProcessingError: z.string().nullable().optional(),
+  updatedAt: z.date()
 })
 
 // ==========================================
@@ -123,3 +174,6 @@ export type LessonStudy = z.infer<typeof lessonStudySchema>
 export type LessonCompact = z.infer<typeof lessonCompactSchema>
 export type CreateLessonInput = z.infer<typeof createLessonInputSchema>
 export type UpdateLessonInput = z.infer<typeof updateLessonInputSchema>
+export type UpdateLessonAiContentInput = z.infer<typeof updateLessonAiContentInputSchema>
+export type LessonAiContentResponse = z.infer<typeof lessonAiContentResponseSchema>
+

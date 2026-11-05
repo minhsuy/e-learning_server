@@ -38,6 +38,10 @@ export const userSchema = z.object({
   socialInstagram: z.string().default(''),
   socialGithub: z.string().default(''),
   isVerified: z.boolean().default(false),
+  xpTotal: z.number().int().default(0),
+  currentStreak: z.number().int().default(0),
+  longestStreak: z.number().int().default(0),
+  lastActivityAt: z.date().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date()
 })
@@ -133,6 +137,34 @@ export const createTeacherInputSchema = z.object({
   payload: createTeacherPayloadSchema
 })
 
+export const googleLoginInputSchema = z
+  .object({
+    idToken: z.string().optional(),
+    id_token: z.string().optional(),
+    credential: z.string().optional(),
+    token: z.string().optional(),
+    code: z.string().optional(),
+    redirectUri: z.string().optional(),
+    redirect_uri: z.string().optional(),
+    accessToken: z.string().optional(),
+    access_token: z.string().optional()
+  })
+  .refine(
+    (data) =>
+      Boolean(
+        data.idToken ||
+          data.id_token ||
+          data.credential ||
+          data.token ||
+          data.code ||
+          data.accessToken ||
+          data.access_token
+      ),
+    {
+      message: 'Google credential (idToken / credential / code / accessToken) is required'
+    }
+  )
+
 // ==========================================
 // 6. INFERRED TYPESCRIPT TYPES
 // ==========================================
@@ -146,4 +178,5 @@ export type CreateUserInput = z.infer<typeof createUserInputSchema>
 export type UpdateUserInput = z.infer<typeof updateUserInputSchema>
 export type CreateTeacherPayload = z.infer<typeof createTeacherPayloadSchema>
 export type CreateTeacherInput = z.infer<typeof createTeacherInputSchema>
+export type GoogleLoginInput = z.infer<typeof googleLoginInputSchema>
 

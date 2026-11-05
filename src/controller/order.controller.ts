@@ -39,9 +39,17 @@ export const getMyOrdersController = asyncHandler(async (req: Request, res: Resp
 export const updateOrderStatusController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const id = req.params.id as string
   const { status } = req.body
-  const { userId, role } = req.user as { userId: string; role: string }
+  const user = req.user as { userId?: string; id?: string; role?: string } | undefined
+  const userId = user?.userId || user?.id || ''
+  const role = user?.role || ''
 
-  const result = await updateOrderStatusService({ orderId: id, status, userId, role })
+  const result = await updateOrderStatusService({
+    orderId: id,
+    status,
+    rejectedReason: req.body.rejectedReason || req.body.reason,
+    userId,
+    role
+  })
   return res.status(result.statusCode || 200).json(result)
 })
 
@@ -49,7 +57,9 @@ export const updateOrderStatusController = asyncHandler(async (req: Request, res
 export const getOrdersController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { page, limit, search, status, sortBy } = req.query
 
-  const { userId, role } = req.user as { userId: string; role: string }
+  const user = req.user as { userId?: string; id?: string; role?: string } | undefined
+  const userId = user?.userId || user?.id || ''
+  const role = user?.role || ''
 
   const result = await getOrdersService({
     page: Number(page) || 1,

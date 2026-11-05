@@ -7,7 +7,8 @@ import {
   getCommentsByAdminOrTeacherController,
   getCommentsByLessonController,
   likeCommentController,
-  updateCommentController
+  updateCommentController,
+  updateCommentStatusController
 } from '~/controller/comment.controller'
 import {
   commentIdParamValidator,
@@ -15,6 +16,7 @@ import {
   createCommentValidator,
   getCommentsQueryValidator,
   lessonIdValidator,
+  updateCommentStatusValidator,
   updateCommentValidator
 } from '~/middlewares/comment.middleware'
 
@@ -87,4 +89,15 @@ commentRouter.delete(
   handleValidationErrors,
   deleteCommentByAdminOrTeacherController
 )
+
+// UPDATE COMMENT STATUS BY ADMIN : PATCH /api/comments/admin/:id/status
+commentRouter.patch(
+  '/admin/:id/status',
+  verifyAccessToken,
+  isAdmin,
+  updateCommentStatusValidator,
+  handleValidationErrors,
+  updateCommentStatusController
+)
+
 export default commentRouter

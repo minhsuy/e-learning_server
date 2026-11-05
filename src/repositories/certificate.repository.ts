@@ -18,6 +18,7 @@ import { prisma, PrismaTransactionClient } from '~/config/prisma'
 
 export const CERTIFICATE_PUBLIC_SELECT = {
   id: true,
+  code: true,
   userId: true,
   courseId: true,
   grade: true,
@@ -29,6 +30,67 @@ export const CERTIFICATE_PUBLIC_SELECT = {
 
 export type CertificatePublicPayload = Prisma.CertificateGetPayload<{
   select: typeof CERTIFICATE_PUBLIC_SELECT
+}>
+
+export const CERTIFICATE_WITH_COURSE_SELECT = {
+  id: true,
+  code: true,
+  userId: true,
+  courseId: true,
+  grade: true,
+  certificateUrl: true,
+  issuedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  course: {
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      image: true,
+      author: {
+        select: {
+          id: true,
+          username: true,
+          avatar: true
+        }
+      }
+    }
+  }
+} as const satisfies Prisma.CertificateSelect
+
+export type CertificateWithCoursePayload = Prisma.CertificateGetPayload<{
+  select: typeof CERTIFICATE_WITH_COURSE_SELECT
+}>
+
+export const CERTIFICATE_VERIFY_SELECT = {
+  id: true,
+  code: true,
+  grade: true,
+  certificateUrl: true,
+  issuedAt: true,
+  user: {
+    select: {
+      username: true,
+      avatar: true
+    }
+  },
+  course: {
+    select: {
+      title: true,
+      slug: true,
+      image: true,
+      author: {
+        select: {
+          username: true
+        }
+      }
+    }
+  }
+} as const satisfies Prisma.CertificateSelect
+
+export type CertificateVerifyPayload = Prisma.CertificateGetPayload<{
+  select: typeof CERTIFICATE_VERIFY_SELECT
 }>
 
 // ==========================================
@@ -55,6 +117,26 @@ export const findCertificateByUserAndCourse = async (
 }
 
 /**
+ * Find certificate with course details by composite unique key [userId, courseId].
+ */
+export const findCertificateByUserAndCourseWithDetails = async (
+  userId: string,
+  courseId: string,
+  tx?: PrismaTransactionClient
+): Promise<CertificateWithCoursePayload | null> => {
+  const client = tx || prisma
+  return client.certificate.findUnique({
+    where: {
+      userId_courseId: {
+        userId,
+        courseId
+      }
+    },
+    select: CERTIFICATE_WITH_COURSE_SELECT
+  })
+}
+
+/**
  * Find certificate by primary key UUID.
  */
 export const findCertificateById = async (
@@ -68,16 +150,43 @@ export const findCertificateById = async (
 }
 
 /**
- * Find all certificates earned by a user.
+ * Find certificate for public verification by unique certificate code or ID.
+ */
+export const findCertificateByCodeOrId = async (
+  codeOrId: string,
+  tx?: PrismaTransactionClient
+): Promise<CertificateVerifyPayload | null> => {
+  const client = tx || prisma
+  // Search first by code
+  const byCode = await client.certificate.findUnique({
+    where: { code: codeOrId },
+    select: CERTIFICATE_VERIFY_SELECT
+  })
+  if (byCode) return byCode
+
+  // Fallback search by id if valid UUID format
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(codeOrId)
+  if (isUUID) {
+    return client.certificate.findUnique({
+      where: { id: codeOrId },
+      select: CERTIFICATE_VERIFY_SELECT
+    })
+  }
+
+  return null
+}
+
+/**
+ * Find all certificates earned by a user with course details.
  */
 export const findCertificatesByUserId = async (
   userId: string,
   tx?: PrismaTransactionClient
-): Promise<CertificatePublicPayload[]> => {
+): Promise<CertificateWithCoursePayload[]> => {
   const client = tx || prisma
   return client.certificate.findMany({
     where: { userId },
-    select: CERTIFICATE_PUBLIC_SELECT,
+    select: CERTIFICATE_WITH_COURSE_SELECT,
     orderBy: { issuedAt: 'desc' }
   })
 }
@@ -89,6 +198,7 @@ export const createCertificate = async (
   data: {
     userId: string
     courseId: string
+    code?: string
     grade: number | Prisma.Decimal
     certificateUrl: string
     issuedAt?: Date
@@ -100,6 +210,7 @@ export const createCertificate = async (
     data: {
       userId: data.userId,
       courseId: data.courseId,
+      code: data.code,
       grade: typeof data.grade === 'number' ? new Prisma.Decimal(data.grade.toFixed(2)) : data.grade,
       certificateUrl: data.certificateUrl,
       issuedAt: data.issuedAt || new Date()

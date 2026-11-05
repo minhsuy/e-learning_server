@@ -46,7 +46,9 @@ export enum EEnrollmentStatus {
 export enum CommentStatus {
   APPROVED = 'approved',
   PENDING = 'pending',
-  REJECTED = 'rejected'
+  REJECTED = 'rejected',
+  HIDDEN = 'hidden',
+  FLAGGED = 'flagged'
 }
 export enum ERatingStatus {
   ACTIVE = 'active',

@@ -261,9 +261,14 @@ export const getCategoriesService = async (params: ListQuery, tx?: PrismaTransac
       tx
     )
 
-  const compatCategories = categories.map((cat) =>
+  const compatCategories = categories.map((cat: any) =>
     withCompatId({
-      ...cat,
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      description: cat.description,
+      createdAt: cat.createdAt,
+      courseCount: cat._count?.courses ?? 0,
       _destroy: false
     })
   )
@@ -294,7 +299,14 @@ export const getCategoryDetailService = async (slug: string, tx?: PrismaTransact
         slug: true,
         description: true,
         createdAt: true,
-        isDestroyed: true
+        isDestroyed: true,
+        _count: {
+          select: {
+            courses: {
+              where: { isDestroyed: false }
+            }
+          }
+        }
       }
     },
     tx
@@ -304,13 +316,14 @@ export const getCategoryDetailService = async (slug: string, tx?: PrismaTransact
     return { success: false, statusCode: 404, message: 'Category not found' }
   }
 
-  const { isDestroyed, ...publicData } = category
+  const { isDestroyed, _count, ...publicData } = category as any
 
   return {
     success: true,
     message: 'Fetched category detail successfully!',
     data: withCompatId({
       ...publicData,
+      courseCount: _count?.courses ?? 0,
       _destroy: false
     })
   }
