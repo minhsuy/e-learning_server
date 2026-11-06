@@ -252,3 +252,186 @@ export function resolveAnalyticsDateRange(
   }
 }
 
+/**
+ * Creates a UTC Date representing specific hours and minutes in Vietnam time.
+ */
+export function createVietnamDateTime(
+  year: number,
+  month: number,
+  day: number,
+  hours: number = 0,
+  minutes: number = 0,
+  seconds: number = 0,
+  ms: number = 0
+): Date {
+  return new Date(Date.UTC(year, month, day, hours, minutes, seconds, ms) - VIETNAM_OFFSET_MS)
+}
+
+/**
+ * Calculates the next occurrence timestamp in UTC for daily or weekly report deliveries.
+ */
+export function calculateNextRunAt(
+  reportType: 'DAILY' | 'WEEKLY',
+  deliveryTime: string = '20:00',
+  dayOfWeek?: number | null,
+  referenceDate: Date = new Date()
+): Date {
+  const [hStr, mStr] = (deliveryTime || '20:00').split(':')
+  const targetHours = parseInt(hStr, 10) || 0
+  const targetMinutes = parseInt(mStr, 10) || 0
+
+  const vn = getVietnamCalendarDate(referenceDate)
+  const currentMinutesTotal = vn.hours * 60 + vn.minutes
+  const targetMinutesTotal = targetHours * 60 + targetMinutes
+
+  if (reportType === 'DAILY') {
+    if (currentMinutesTotal < targetMinutesTotal) {
+      // Due later today
+      return createVietnamDateTime(vn.year, vn.month, vn.day, targetHours, targetMinutes)
+    } else {
+      // Due tomorrow
+      return createVietnamDateTime(vn.year, vn.month, vn.day + 1, targetHours, targetMinutes)
+    }
+  }
+
+  // WEEKLY
+  // Target day: 1 = Mon .. 7 = Sun. Default = 1 (Monday)
+  const targetDay = dayOfWeek && dayOfWeek >= 1 && dayOfWeek <= 7 ? dayOfWeek : 1
+  const currentDay = vn.dayOfWeek === 0 ? 7 : vn.dayOfWeek
+
+  let daysToAdd = (targetDay - currentDay + 7) % 7
+  if (daysToAdd === 0) {
+    if (currentMinutesTotal >= targetMinutesTotal) {
+      daysToAdd = 7
+    }
+  }
+
+  return createVietnamDateTime(vn.year, vn.month, vn.day + daysToAdd, targetHours, targetMinutes)
+}
+
+/**
+ * Calculates the subsequent occurrence timestamp in UTC for daily or weekly report deliveries,
+ * strictly guaranteeing that the new nextRunAt is scheduled for the next period (tomorrow or next week),
+ * preventing same-period re-triggering even if executed slightly ahead or behind clock boundaries.
+ */
+export function calculateSubsequentRunAt(
+  reportType: 'DAILY' | 'WEEKLY',
+  deliveryTime: string = '20:00',
+  dayOfWeek?: number | null,
+  referenceDate: Date = new Date()
+): Date {
+  const [hStr, mStr] = (deliveryTime || '20:00').split(':')
+  const targetHours = parseInt(hStr, 10) || 0
+  const targetMinutes = parseInt(mStr, 10) || 0
+
+  const vn = getVietnamCalendarDate(referenceDate)
+
+  if (reportType === 'DAILY') {
+    // Strictly advance by at least 1 calendar day from referenceDate
+    return createVietnamDateTime(vn.year, vn.month, vn.day + 1, targetHours, targetMinutes)
+  }
+
+  // WEEKLY: Target day 1 = Mon .. 7 = Sun. Default = 1 (Monday)
+  const targetDay = dayOfWeek && dayOfWeek >= 1 && dayOfWeek <= 7 ? dayOfWeek : 1
+  const currentDay = vn.dayOfWeek === 0 ? 7 : vn.dayOfWeek
+
+  let daysToAdd = (targetDay - currentDay + 7) % 7
+  if (daysToAdd === 0) {
+    daysToAdd = 7
+  }
+
+  return createVietnamDateTime(vn.year, vn.month, vn.day + daysToAdd, targetHours, targetMinutes)
+}
+
+/**
+ * Resolves date boundaries for the daily automated snapshot (today 00:00:00 to now).
+ */
+export function resolveDailySnapshotRange(referenceDate: Date = new Date()): {
+  startDate: Date
+  endDate: Date
+  dateLabel: string
+  periodKey: string
+} {
+  const vn = getVietnamCalendarDate(referenceDate)
+  const startDate = createVietnamDate(vn.year, vn.month, vn.day)
+  const endDate =
+    referenceDate.getTime() > startDate.getTime()
+      ? referenceDate
+      : createVietnamDate(vn.year, vn.month, vn.day + 1)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const dateLabel = `${pad(vn.day)}/${pad(vn.month + 1)}/${vn.year}`
+  const periodKey = `DAILY:${vn.year}-${pad(vn.month + 1)}-${pad(vn.day)}`
+
+  return {
+    startDate,
+    endDate,
+    dateLabel,
+    periodKey
+  }
+}
+
+/**
+ * Resolves date boundaries for the previous completed calendar week (Monday to Sunday).
+ */
+export function resolvePreviousCompletedWeekRange(referenceDate: Date = new Date()): {
+  startDate: Date
+  endDate: Date
+  weekLabel: string
+  periodKey: string
+} {
+  const vn = getVietnamCalendarDate(referenceDate)
+  const currentDayOfWeek = vn.dayOfWeek === 0 ? 7 : vn.dayOfWeek
+  const daysBackToThisMonday = currentDayOfWeek - 1
+  const daysBackToLastMonday = daysBackToThisMonday + 7
+
+  const startDate = createVietnamDate(vn.year, vn.month, vn.day - daysBackToLastMonday)
+  const endDate = createVietnamDate(vn.year, vn.month, vn.day - daysBackToThisMonday)
+
+  const startVn = getVietnamCalendarDate(startDate)
+  const endInclusiveVn = getVietnamCalendarDate(new Date(endDate.getTime() - 1000))
+  const pad = (n: number) => String(n).padStart(2, '0')
+
+  const startStr = `${pad(startVn.day)}/${pad(startVn.month + 1)}/${startVn.year}`
+  const endStr = `${pad(endInclusiveVn.day)}/${pad(endInclusiveVn.month + 1)}/${endInclusiveVn.year}`
+  const weekLabel = `${startStr} - ${endStr}`
+  const periodKey = `WEEKLY:${startVn.year}-${pad(startVn.month + 1)}-${pad(startVn.day)}_${endInclusiveVn.year}-${pad(endInclusiveVn.month + 1)}-${pad(endInclusiveVn.day)}`
+
+  return {
+    startDate,
+    endDate,
+    weekLabel,
+    periodKey
+  }
+}
+
+/**
+ * Resolves date boundaries for the comparison week (the Monday to Sunday before the previous completed week).
+ */
+export function resolvePriorWeekComparisonRange(referenceDate: Date = new Date()): {
+  startDate: Date
+  endDate: Date
+  weekLabel: string
+} {
+  const vn = getVietnamCalendarDate(referenceDate)
+  const currentDayOfWeek = vn.dayOfWeek === 0 ? 7 : vn.dayOfWeek
+  const daysBackToThisMonday = currentDayOfWeek - 1
+  const daysBackToPriorMonday = daysBackToThisMonday + 14
+  const daysBackToLastMonday = daysBackToThisMonday + 7
+
+  const startDate = createVietnamDate(vn.year, vn.month, vn.day - daysBackToPriorMonday)
+  const endDate = createVietnamDate(vn.year, vn.month, vn.day - daysBackToLastMonday)
+
+  const startVn = getVietnamCalendarDate(startDate)
+  const endInclusiveVn = getVietnamCalendarDate(new Date(endDate.getTime() - 1000))
+  const pad = (n: number) => String(n).padStart(2, '0')
+
+  const startStr = `${pad(startVn.day)}/${pad(startVn.month + 1)}/${startVn.year}`
+  const endStr = `${pad(endInclusiveVn.day)}/${pad(endInclusiveVn.month + 1)}/${endInclusiveVn.year}`
+
+  return {
+    startDate,
+    endDate,
+    weekLabel: `${startStr} - ${endStr}`
+  }
+}
+

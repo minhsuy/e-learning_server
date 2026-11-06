@@ -332,6 +332,7 @@ export const handleHelpCommand = async (ctx: TeacherBotContext): Promise<void> =
     '🔹 `/students [kỳ]` - Thống kê học viên (học viên mới, đang học, hoàn thành, hủy ghi danh).',
     '🔹 `/courses` - Danh mục khóa học toàn diện, tỷ lệ phát sinh doanh số, khóa học bán chạy nhất.',
     '🔹 `/report` - Báo cáo tổng hợp nhanh (Executive Summary) kết hợp mọi mốc thời gian.',
+    '🔹 `/schedule` - Quản lý lịch nhận báo cáo kinh doanh tự động (hàng ngày & hàng tuần).',
     '',
     '⚙️ *Lệnh Cơ Bản & Tài Khoản:*',
     '🔹 `/start` - Bắt đầu tương tác với Bot hoặc kích hoạt liên kết deep-link.',

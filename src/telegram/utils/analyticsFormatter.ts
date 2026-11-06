@@ -5,9 +5,12 @@ import {
   TeacherRevenueAnalytics,
   TeacherStudentAnalytics
 } from '~/models/teacherAnalytics.model'
+import { CourseSpecificAnalytics, CourseComparisonAnalytics } from '~/services/courseSpecificAnalytics.service'
+import { ResolvedCourseEntity } from '~/services/courseEntityResolver.service'
+import { CourseMetric } from '~/models/analyticsIntent.model'
 
 /**
- * TMDEMY — TELEGRAM ANALYTICS MESSAGE FORMATTER (TG-03B)
+ * TMDEMY — TELEGRAM ANALYTICS MESSAGE FORMATTER (TG-03B / TG-04D)
  *
  * Provides safe, clean, localized Vietnamese Markdown formatting for Telegram bot analytics responses.
  *
@@ -16,6 +19,8 @@ import {
  * 2. Guaranteed zero `undefined`, `null`, or `NaN` outputs.
  * 3. Graceful handling of zero-sales, empty arrays, or newly onboarded teachers.
  * 4. Consistent Vietnam currency formatting (`VND`).
+ * 5. MANDATORY: Zero client-facing timezone footers (no Asia/Ho_Chi_Minh or UTC+7 in messages).
+ * 6. Explicit label for course list prices (`Giá bán: ...`) to prevent confusion with earned revenue.
  */
 
 /**
@@ -80,9 +85,7 @@ export function formatRevenueMessage(
     `• Hôm nay: ${formatVND(kpis.todayRevenue)}`,
     `• Tuần này: ${formatVND(kpis.thisWeekRevenue)}`,
     `• Tháng này: ${formatVND(kpis.thisMonthRevenue)}`,
-    `• Toàn thời gian: *${formatVND(kpis.allTimeRevenue)}*`,
-    '',
-    '🕒 _Múi giờ báo cáo: Asia/Ho_Chi_Minh (UTC+7)_'
+    `• Toàn thời gian: *${formatVND(kpis.allTimeRevenue)}*`
   ]
 
   return lines.join('\n')
@@ -124,9 +127,7 @@ export function formatOrdersMessage(
     '',
     ...topCourseSales,
     '',
-    `🌐 *Tổng số đơn hàng toàn thời gian:* *${formatCount(data.allTimeTotalOrders)}* đơn`,
-    '',
-    '🕒 _Múi giờ báo cáo: Asia/Ho_Chi_Minh (UTC+7)_'
+    `🌐 *Tổng số đơn hàng toàn thời gian:* *${formatCount(data.allTimeTotalOrders)}* đơn`
   ]
 
   return lines.join('\n')
@@ -166,9 +167,7 @@ export function formatStudentsMessage(
     '',
     ...courseEnrollmentSection,
     '',
-    `🌐 *Tổng số học viên duy nhất toàn thời gian:* *${formatCount(summary.totalUniqueStudentsAllTime)}* học viên`,
-    '',
-    '🕒 _Múi giờ báo cáo: Asia/Ho_Chi_Minh (UTC+7)_'
+    `🌐 *Tổng số học viên duy nhất toàn thời gian:* *${formatCount(summary.totalUniqueStudentsAllTime)}* học viên`
   ]
 
   return lines.join('\n')
@@ -200,7 +199,7 @@ export function formatCoursesMessage(
     zeroSales.length > 0
       ? [
           '💡 *Khóa học cần đẩy mạnh (Chưa có lượt bán):*',
-          ...zeroSales.slice(0, 5).map((c) => `• ${escapeMarkdown(c.title)} (${formatVND(c.price)})`),
+          ...zeroSales.slice(0, 5).map((c) => `• ${escapeMarkdown(c.title)} (Giá bán: ${formatVND(c.price)})`),
           ...(zeroSales.length > 5
             ? [`_...và còn ${zeroSales.length - 5} khóa học khác chưa phát sinh doanh thu_`]
             : [])
@@ -231,9 +230,7 @@ export function formatCoursesMessage(
         : '_Chưa có dữ liệu_'
     }`,
     '',
-    ...zeroSalesSection,
-    '',
-    '🕒 _Dữ liệu được cập nhật thời gian thực từ cơ sở dữ liệu TMdemy._'
+    ...zeroSalesSection
   ]
 
   return lines.join('\n')
@@ -277,11 +274,155 @@ export function formatReportMessage(
     `• Tuần này: *${formatVND(week.revenue)}* | ${formatCount(week.orders)} đơn | +${formatCount(week.newStudents)} học viên mới`,
     `• Tháng này: *${formatVND(month.revenue)}* | ${formatCount(month.orders)} đơn | +${formatCount(month.newStudents)} học viên mới`,
     '',
-    ...topCourseHighlight,
-    '',
-    `🕒 _Thời điểm xuất báo cáo: ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} (UTC+7)_`
+    ...topCourseHighlight
   ]
 
   return lines.join('\n')
 }
 
+/**
+ * Formats focused course-specific analytics message (TG-04D).
+ */
+export function formatCourseSpecificMessage(
+  teacherName: string,
+  data: CourseSpecificAnalytics,
+  metric?: CourseMetric | null
+): string {
+  const { course, summary, allTime } = data
+
+  const lines = [
+    '💰 *THỐNG KÊ KHÓA HỌC*',
+    `👨‍🏫 Giảng viên: *${escapeMarkdown(teacherName)}*`,
+    '',
+    `📚 Khóa học: *${escapeMarkdown(course.title)}*`,
+    `📅 Thời gian: *${escapeMarkdown(summary.periodLabel)}*`,
+    '',
+    '💵 *Chỉ số kinh doanh trong kỳ:*',
+    `• Doanh thu thực nhận: *${formatVND(summary.realizedRevenue)}*`,
+    `• Đơn hàng thành công: *${formatCount(summary.completedOrders)}* đơn`,
+    `• Giá trị trung bình/đơn: *${formatVND(summary.averageOrderValue)}*`,
+    `• Học viên mới ghi danh: *${formatCount(summary.periodEnrollments)}* học viên`,
+    '',
+    '📌 *Thông tin niêm yết & Toàn thời gian:*',
+    `• Giá bán niêm yết: *${formatVND(course.price)}*`,
+    `• Tổng doanh thu tích lũy: *${formatVND(allTime.revenue)}*`,
+    `• Tổng đơn hàng tích lũy: *${formatCount(allTime.completedOrders)}* đơn`,
+    `• Tổng học viên toàn thời gian: *${formatCount(allTime.totalEnrollments)}* học viên`
+  ]
+
+  if (summary.pendingOrders > 0) {
+    lines.push(
+      `• Đơn đang chờ thanh toán: ⏳ ${formatCount(summary.pendingOrders)} đơn (${formatVND(summary.pendingRevenue)})`
+    )
+  }
+
+  return lines.join('\n')
+}
+
+/**
+ * Formats course comparison across two periods (TG-04D).
+ */
+export function formatCourseComparisonMessage(
+  teacherName: string,
+  data: CourseComparisonAnalytics
+): string {
+  const {
+    course,
+    metric,
+    primaryPeriod,
+    comparisonPeriod,
+    calculation,
+    isPartialMonth,
+    partialMonthDisclaimer
+  } = data
+
+  let metricName = 'Doanh thu thực nhận'
+  let primaryFormatted = formatVND(primaryPeriod.revenue)
+  let prevFormatted = formatVND(comparisonPeriod.revenue)
+  let diffFormatted = formatVND(Math.abs(calculation.absoluteChange))
+
+  if (metric === 'sales') {
+    metricName = 'Số đơn thành công'
+    primaryFormatted = `${formatCount(primaryPeriod.completedOrders)} đơn`
+    prevFormatted = `${formatCount(comparisonPeriod.completedOrders)} đơn`
+    diffFormatted = `${formatCount(Math.abs(calculation.absoluteChange))} đơn`
+  } else if (metric === 'students') {
+    metricName = 'Học viên ghi danh mới'
+    primaryFormatted = `${formatCount(primaryPeriod.enrollments)} học viên`
+    prevFormatted = `${formatCount(comparisonPeriod.enrollments)} học viên`
+    diffFormatted = `${formatCount(Math.abs(calculation.absoluteChange))} học viên`
+  }
+
+  let trendIcon = '⚪'
+  let trendText = 'Không đổi (0%)'
+  if (calculation.isIncrease) {
+    trendIcon = '📈'
+    trendText =
+      calculation.percentageChange !== null
+        ? `Tăng +${calculation.percentageChange}% (+${diffFormatted})`
+        : `Tăng +${diffFormatted} (kỳ trước ghi nhận 0)`
+  } else if (calculation.isDecrease) {
+    trendIcon = '📉'
+    trendText =
+      calculation.percentageChange !== null
+        ? `Giảm ${calculation.percentageChange}% (-${diffFormatted})`
+        : `Giảm -${diffFormatted}`
+  }
+
+  const lines = [
+    '📊 *SO SÁNH HIỆU QUẢ KHÓA HỌC*',
+    `👨‍🏫 Giảng viên: *${escapeMarkdown(teacherName)}*`,
+    '',
+    `📚 Khóa học: *${escapeMarkdown(course.title)}*`,
+    `🎯 Chỉ số: *${escapeMarkdown(metricName)}*`,
+    '',
+    `• ${escapeMarkdown(primaryPeriod.label)}: *${primaryFormatted}*`,
+    `• ${escapeMarkdown(comparisonPeriod.label)}: *${prevFormatted}*`,
+    `• Biến động: ${trendIcon} *${escapeMarkdown(trendText)}*`
+  ]
+
+  if (isPartialMonth && partialMonthDisclaimer) {
+    lines.push('', escapeMarkdown(partialMonthDisclaimer))
+  }
+
+  return lines.join('\n')
+}
+
+/**
+ * Formats course not found advisory response.
+ */
+export function formatCourseNotFoundMessage(
+  searchTerm: string
+): string {
+  return [
+    '📚 *KHÔNG TÌM THẤY KHÓA HỌC*',
+    '',
+    `Không tìm thấy khóa học nào phù hợp với từ khóa "${escapeMarkdown(searchTerm)}" trong danh mục giảng dạy của bạn.`,
+    '',
+    '💡 *Gợi ý:*',
+    '• Kiểm tra lại tên khóa học hoặc từ khóa tìm kiếm.',
+    '• Gõ /courses để xem toàn bộ danh mục khóa học của bạn.'
+  ].join('\n')
+}
+
+/**
+ * Formats ambiguous course candidates advisory response.
+ */
+export function formatCourseAmbiguousMessage(
+  searchTerm: string,
+  candidates: ResolvedCourseEntity[]
+): string {
+  const candidateList = candidates
+    .map((c, i) => `${i + 1}. *${escapeMarkdown(c.title)}* (Giá bán: ${formatVND(c.price)})`)
+    .join('\n')
+
+  return [
+    '📚 *TÌM THẤY NHIỀU KHÓA HỌC PHÙ HỢP*',
+    '',
+    `Hệ thống tìm thấy ${candidates.length} khóa học có tên tương tự "${escapeMarkdown(searchTerm)}":`,
+    '',
+    candidateList,
+    '',
+    '👉 *Vui lòng ghi rõ hơn tên khóa học bạn cần xem thống kê.*'
+  ].join('\n')
+}

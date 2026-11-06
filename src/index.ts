@@ -9,6 +9,7 @@ import http from 'http'
 import { initSocket } from './socket/initSocket'
 import cors from 'cors'
 import { initTelegramBot, stopTelegramBot } from './telegram/bot'
+import { startTelegramReportScheduler, stopTelegramReportScheduler } from './jobs/telegramReportScheduler'
 
 dotenv.config()
 const app = express()
@@ -44,11 +45,14 @@ server.listen(port, () => {
   initTelegramBot().catch((err) => {
     console.error('[TelegramBot] Initialization error:', err.message)
   })
+  // Start Automated Telegram Report Scheduler (TG-05)
+  startTelegramReportScheduler()
 })
 
 // Graceful shutdown handling
 const handleShutdown = async (signal: string) => {
   console.log(`[Server] Received ${signal}. Shutting down gracefully...`)
+  stopTelegramReportScheduler()
   await stopTelegramBot()
   server.close(() => {
     console.log('[Server] HTTP server closed.')

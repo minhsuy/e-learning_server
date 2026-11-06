@@ -7,6 +7,7 @@ import {
   handleRevenueCommand,
   handleStudentsCommand
 } from './handlers/analytics.handler'
+import { handleScheduleCommand } from './handlers/schedule.handler'
 import {
   handleAccountCommand,
   handleHelpCommand,
@@ -43,6 +44,7 @@ export const TELEGRAM_BOT_COMMANDS = [
   { command: 'orders', description: 'Thống kê chi tiết đơn hàng (thành công, hủy, pending)' },
   { command: 'students', description: 'Thống kê học viên & tình trạng ghi danh' },
   { command: 'courses', description: 'Danh mục khóa học & tỷ lệ phát sinh doanh số' },
+  { command: 'schedule', description: 'Cài đặt lịch nhận báo cáo tự động (hàng ngày / hàng tuần)' },
   { command: 'account', description: 'Xem tài khoản Giảng viên TMdemy đã liên kết' },
   { command: 'status', description: 'Kiểm tra trạng thái kết nối và định danh' },
   { command: 'help', description: 'Hướng dẫn sử dụng chi tiết' }
@@ -97,6 +99,7 @@ export function createTelegramBot(
   bot.command('students', requireTeacherAuth, handleStudentsCommand)
   bot.command('courses', requireTeacherAuth, handleCoursesCommand)
   bot.command('report', requireTeacherAuth, handleReportCommand)
+  bot.command('schedule', requireTeacherAuth, handleScheduleCommand)
 
   // 4. Callback Query Handlers (Inline Keyboard Confirmations)
   bot.callbackQuery('unlink_confirm', handleUnlinkConfirmCallback)

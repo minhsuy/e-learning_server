@@ -34,6 +34,7 @@ export * as codingExerciseRepository from './codingExercise.repository'
 export * as codingSubmissionRepository from './codingSubmission.repository'
 export * as telegramAccountRepository from './telegramAccount.repository'
 export * as teacherAnalyticsRepository from './teacherAnalytics.repository'
+export * as telegramReportScheduleRepository from './telegramReportSchedule.repository'
 
 export * from './user.repository'
 export * from './category.repository'
@@ -59,4 +60,5 @@ export * from './codingExercise.repository'
 export * from './codingSubmission.repository'
 export * from './telegramAccount.repository'
 export * from './teacherAnalytics.repository'
+export * from './telegramReportSchedule.repository'
 

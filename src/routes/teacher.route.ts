@@ -14,8 +14,12 @@ import {
   getTeacherRevenueController
 } from '~/controller/teacherStatistic.controller'
 import {
+  configureDailyScheduleController,
+  configureWeeklyScheduleController,
   generateTeacherLinkTokenController,
+  getTeacherSchedulesController,
   getTeacherTelegramStatusController,
+  pauseTeacherSchedulesController,
   unlinkTeacherTelegramController
 } from '~/controller/telegramTeacher.controller'
 import { linkTokenRateLimiter } from '~/middlewares/telegramTeacher.middleware'
@@ -65,6 +69,42 @@ teacherRouter.delete(
   verifyAccessToken,
   isTeacher,
   unlinkTeacherTelegramController
+)
+
+// ==========================================
+// TEACHER TELEGRAM REPORT SCHEDULING (TG-05)
+// ==========================================
+
+// 4. GET /api/teacher/telegram/schedules (Get all schedules & link summary)
+teacherRouter.get(
+  '/telegram/schedules',
+  verifyAccessToken,
+  isTeacher,
+  getTeacherSchedulesController
+)
+
+// 5. PUT /api/teacher/telegram/schedules/daily (Configure / toggle Daily Report)
+teacherRouter.put(
+  '/telegram/schedules/daily',
+  verifyAccessToken,
+  isTeacher,
+  configureDailyScheduleController
+)
+
+// 6. PUT /api/teacher/telegram/schedules/weekly (Configure / toggle Weekly Report)
+teacherRouter.put(
+  '/telegram/schedules/weekly',
+  verifyAccessToken,
+  isTeacher,
+  configureWeeklyScheduleController
+)
+
+// 7. POST /api/teacher/telegram/schedules/pause (Pause all schedules)
+teacherRouter.post(
+  '/telegram/schedules/pause',
+  verifyAccessToken,
+  isTeacher,
+  pauseTeacherSchedulesController
 )
 
 // ==========================================

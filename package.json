@@ -35,6 +35,7 @@
     "typescript-eslint": "^8.30.1"
   },
   "dependencies": {
+    "@google/genai": "^2.32.0",
     "@prisma/client": "6.4.1",
     "@types/express": "^5.0.1",
     "@types/nodemailer": "^7.0.1",
